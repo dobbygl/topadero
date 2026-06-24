@@ -47,6 +47,10 @@ async function main(): Promise<void> {
     if (e.code === 'KeyB') debug = !debug
   })
 
+  // Cámara de inspección (?look=<z>): enfoca un punto del circuito desde un 3/4. Solo dev/capturas.
+  const lookParam = new URLSearchParams(location.search).get('look')
+  const lookZ = lookParam !== null && lookParam !== '' ? Number(lookParam) : null
+
   let lastRenderMs = performance.now()
   const frame = (nowMs: number): void => {
     const dtRender = Math.min((nowMs - lastRenderMs) / 1000, 0.1)
@@ -56,6 +60,10 @@ async function main(): Promise<void> {
 
     const ps = sim.getPlayerState()
     camera.update(ps.position, input.yaw, input.pitch, dtRender)
+    if (lookZ !== null) {
+      camera.camera.position.set(4.5, 4, lookZ + 5.5)
+      camera.camera.lookAt(0, 2.6, lookZ)
+    }
     view.updateDynamic(
       sim.getPreviousPlayerTransform(),
       { position: ps.position, quaternion: quatFromYaw(ps.facingYaw) },

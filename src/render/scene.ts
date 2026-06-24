@@ -26,19 +26,21 @@ function lerpInto(out: THREE.Vector3, a: Vec3, b: Vec3, t: number): void {
 }
 
 /**
- * Escala uniformemente (XYZ proporcional) una malla GLB y la centra en su origen local.
- * - 'contain' (def.): cabe DENTRO de `target` (min de proporciones); para props/obstáculos.
- * - 'cover': LLENA `target` (max de proporciones), desbordando los ejes menores; para el
- *   personaje, que si no queda a ~50% de la altura de su cápsula.
+ * Escala una malla GLB a `target` y la centra en su origen local.
+ * - 'contain' (def.): uniforme, cabe DENTRO (min de proporciones); para props del cielo.
+ * - 'cover': uniforme, LLENA desbordando los ejes menores; para el personaje (si no, ~50%).
+ * - 'fill': NO uniforme, rellena exactamente la caja del collider (XYZ por separado); para
+ *   obstáculos → la malla adopta la forma/orientación del collider (barra larga en X, vaivén
+ *   en Z…) sin huecos. Distorsiona algo la proporción, aceptable en props abstractos.
  */
-function fitInto(obj: THREE.Object3D, target: Vec3, mode: 'contain' | 'cover' = 'contain'): void {
+function fitInto(obj: THREE.Object3D, target: Vec3, mode: 'contain' | 'cover' | 'fill' = 'contain'): void {
   const size = new THREE.Vector3()
   new THREE.Box3().setFromObject(obj).getSize(size)
   const rx = target.x / (size.x || 1)
   const ry = target.y / (size.y || 1)
   const rz = target.z / (size.z || 1)
-  const s = mode === 'cover' ? Math.max(rx, ry, rz) : Math.min(rx, ry, rz)
-  obj.scale.setScalar(s)
+  if (mode === 'fill') obj.scale.set(rx, ry, rz)
+  else obj.scale.setScalar(mode === 'cover' ? Math.max(rx, ry, rz) : Math.min(rx, ry, rz))
   const center = new THREE.Vector3()
   new THREE.Box3().setFromObject(obj).getCenter(center)
   obj.position.sub(center)
@@ -297,7 +299,7 @@ export class SceneView {
       this.mixer = new THREE.AnimationMixer(rig)
       for (const clip of catalog.playerClips ?? []) this.actions.set(clip.name, this.mixer.clipAction(clip))
     } else {
-      this.playerMesh = buildDynamic(getMesh(catalog, MASCOT_MESH_URL), capsuleTarget, capsuleFallback)
+      this.playerMesh = buildDynamic(getMesh(catalog, MASCOT_MESH_URL), capsuleTarget, capsuleFallback, 'cover')
     }
     applyGlossy(this.playerMesh, config.glossy.mascot)
     this.scene.add(this.playerMesh)
@@ -314,7 +316,7 @@ export class SceneView {
           new RoundedBoxGeometry(target.x, target.y, target.z, config.platformRoundSegments, r),
           new THREE.MeshStandardMaterial({ color: ob.color }),
         )
-      })
+      }, 'fill')
       applyGlossy(group, config.glossy.obstacle)
       this.scene.add(group)
       return group
@@ -495,10 +497,15 @@ export class SceneView {
 }
 
 /** Grupo dinámico: malla GLB (ajustada) si existe, o la primitiva de reserva. Lo mueve updateDynamic. */
-function buildDynamic(meshClone: THREE.Object3D | undefined, target: Vec3, fallback: () => THREE.Object3D): THREE.Object3D {
+function buildDynamic(
+  meshClone: THREE.Object3D | undefined,
+  target: Vec3,
+  fallback: () => THREE.Object3D,
+  mode: 'contain' | 'cover' | 'fill' = 'contain',
+): THREE.Object3D {
   const group = new THREE.Group()
   if (meshClone) {
-    fitInto(meshClone, target)
+    fitInto(meshClone, target, mode)
     group.add(meshClone)
   } else {
     group.add(fallback())
