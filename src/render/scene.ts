@@ -25,11 +25,19 @@ function lerpInto(out: THREE.Vector3, a: Vec3, b: Vec3, t: number): void {
   out.set(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t)
 }
 
-/** Escala uniformemente una malla GLB para que quepa en `target` y la centra en su origen local. */
-function fitInto(obj: THREE.Object3D, target: Vec3): void {
+/**
+ * Escala uniformemente (XYZ proporcional) una malla GLB y la centra en su origen local.
+ * - 'contain' (def.): cabe DENTRO de `target` (min de proporciones); para props/obstáculos.
+ * - 'cover': LLENA `target` (max de proporciones), desbordando los ejes menores; para el
+ *   personaje, que si no queda a ~50% de la altura de su cápsula.
+ */
+function fitInto(obj: THREE.Object3D, target: Vec3, mode: 'contain' | 'cover' = 'contain'): void {
   const size = new THREE.Vector3()
   new THREE.Box3().setFromObject(obj).getSize(size)
-  const s = Math.min(target.x / (size.x || 1), target.y / (size.y || 1), target.z / (size.z || 1))
+  const rx = target.x / (size.x || 1)
+  const ry = target.y / (size.y || 1)
+  const rz = target.z / (size.z || 1)
+  const s = mode === 'cover' ? Math.max(rx, ry, rz) : Math.min(rx, ry, rz)
   obj.scale.setScalar(s)
   const center = new THREE.Vector3()
   new THREE.Box3().setFromObject(obj).getCenter(center)
@@ -109,6 +117,8 @@ export class SceneView {
   readonly scene = new THREE.Scene()
   private readonly playerMesh: THREE.Object3D
   private readonly obstacleMeshes: THREE.Object3D[]
+  // Overlay de depuración de física (colliders de Rapier como líneas); SOLO render.
+  private readonly debugLines: THREE.LineSegments
   // Animación del personaje (v1.2.0, SOLO render): mezclador + clips por nombre.
   private mixer: THREE.AnimationMixer | null = null
   private readonly actions = new Map<string, THREE.AnimationAction>()
@@ -280,7 +290,7 @@ export class SceneView {
       )
     if (catalog.playerScene && catalog.loaded.get(PLAYER_RIG_URL)) {
       const rig = catalog.playerScene // instancia única: NO se clona (clone() no reata el skeleton)
-      fitInto(rig, capsuleTarget)
+      fitInto(rig, capsuleTarget, 'cover') // llena la cápsula (si no, ~50% de la altura)
       const group = new THREE.Group()
       group.add(rig)
       this.playerMesh = group
@@ -312,6 +322,30 @@ export class SceneView {
 
     this.buildDecor(catalog)
     this.buildEnvironmentProps()
+
+    // Overlay de depuración (oculto por defecto): líneas de los colliders de Rapier.
+    // depthTest:false + renderOrder alto → se dibuja ENCIMA de las mallas (si no, coincide con
+    // ellas y queda oculto). vertexColors usa los colores de Rapier (sólido/cinético/sensor).
+    this.debugLines = new THREE.LineSegments(
+      new THREE.BufferGeometry(),
+      new THREE.LineBasicMaterial({ color: 0xff2d2d, depthTest: false, depthWrite: false }),
+    )
+    this.debugLines.frustumCulled = false
+    this.debugLines.renderOrder = 999
+    this.debugLines.visible = false
+    this.scene.add(this.debugLines)
+  }
+
+  /** Dibuja/actualiza los colliders de física (datos planos de la sim). null = oculta. SOLO render. */
+  setDebug(data: { vertices: Float32Array; colors: Float32Array } | null): void {
+    if (!data) {
+      this.debugLines.visible = false
+      return
+    }
+    const geo = this.debugLines.geometry
+    geo.setAttribute('position', new THREE.BufferAttribute(data.vertices, 3))
+    geo.setAttribute('color', new THREE.BufferAttribute(data.colors, 4))
+    this.debugLines.visible = true
   }
 
   /** Props decorativos del cielo (globos + molinillos). Sin colliders; no entra en la simulación. */

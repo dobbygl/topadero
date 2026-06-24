@@ -43,6 +43,7 @@ La **colisión y la simulación** usan solo primitivas (cápsulas, cajas, cilind
 | Saltar (solo apoyado) | `Espacio` |
 | Orbitar la cámara | Ratón (clic en el canvas para capturar el puntero) |
 | Reiniciar el intento | `R` |
+| Debug de físicas (colliders) | `B` (o `?debug` en la URL) |
 
 > [!TIP]
 > El cronómetro arranca con tu primer movimiento o salto, no al mover la cámara. Cae por un borde y reaparecerás en la salida sin perder la partida.

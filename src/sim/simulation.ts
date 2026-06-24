@@ -294,4 +294,12 @@ export class Simulation {
   getCircuitDefinition(): CircuitDefinition {
     return this.circuit
   }
+  /**
+   * Datos de depuración de los colliders de Rapier (vértices + colores de líneas). Solo LECTURA:
+   * no avanza la simulación ni afecta al determinismo. Devuelve arrays planos (sin Three), así que
+   * la frontera headless se mantiene; el render los dibuja como LineSegments.
+   */
+  getDebugRender(): { vertices: Float32Array; colors: Float32Array } {
+    return this.world.debugRender()
+  }
 }

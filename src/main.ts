@@ -40,6 +40,13 @@ async function main(): Promise<void> {
     camera.resize(view.aspect)
   })
 
+  // Modo debug de física (tecla B): overlay de colliders de Rapier. Es solo de vista; NO entra
+  // en el StepInput determinista (getFrameInput ignora 'KeyB'), así que no afecta a la simulación.
+  let debug = new URLSearchParams(location.search).has('debug') // ?debug arranca el overlay (capturas)
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyB') debug = !debug
+  })
+
   let lastRenderMs = performance.now()
   const frame = (nowMs: number): void => {
     const dtRender = Math.min((nowMs - lastRenderMs) / 1000, 0.1)
@@ -57,6 +64,7 @@ async function main(): Promise<void> {
       loop.alpha,
     )
     view.updatePlayerAnimation(ps.isGrounded, dtRender)
+    view.setDebug(debug ? sim.getDebugRender() : null)
     hud.update(sim.getRunState())
     view.render(camera.camera)
     requestAnimationFrame(frame)
