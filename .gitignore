@@ -5,5 +5,9 @@
 node_modules/
 dist/
 
+# Entornos virtuales de Python (p. ej. rembg para preparar art/iconos)
+.venv/
+.venv-*/
+
 # Logs y temporales
 *.log
