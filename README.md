@@ -12,7 +12,7 @@
 ![Rapier](https://img.shields.io/badge/Rapier-f%C3%ADsicas%20WASM-FF6B00)
 ![Vite](https://img.shields.io/badge/Vite-dev%20%2B%20build-646CFF?logo=vite&logoColor=white)
 
-[Jugar ahora](https://dobbygl.github.io/topadero/) • [Código fuente](https://github.com/dobbygl/topadero) • [Características](#características) • [Puesta en marcha](#puesta-en-marcha) • [Arquitectura](#arquitectura)
+[Jugar](https://dobbygl.github.io/topadero/play/) • [Web](https://dobbygl.github.io/topadero/) • [Código fuente](https://github.com/dobbygl/topadero) • [Características](#características) • [Puesta en marcha](#puesta-en-marcha) • [Arquitectura](#arquitectura)
 
 <img src="art.png" alt="Key art de Topadero: personajes cápsula recorriendo un circuito de obstáculos" width="100%">
 
@@ -21,7 +21,7 @@
 Topadero es el prototipo (MVP) de un juego de plataformas de obstáculos que corre en el navegador. Controlas un personaje cápsula en tercera persona, saltas desniveles y recorres un circuito corto hasta una meta cronometrada. Su única razón de existir es validar una hipótesis: que mover esa cápsula sobre un motor de físicas resulta divertido y responde bien. Todo lo demás está al servicio de esa pregunta.
 
 > [!TIP]
-> El MVP está implementado y publicado. Puedes [jugar en el navegador](https://dobbygl.github.io/topadero/) sin instalar nada.
+> El MVP está implementado y publicado. La [web de presentación](https://dobbygl.github.io/topadero/) tiene el botón de jugar, o entra directo al [juego](https://dobbygl.github.io/topadero/play/) sin instalar nada.
 
 ## Características
 
@@ -112,7 +112,7 @@ Cada push a `main` ejecuta en GitHub Actions:
 npm ci → npm test → npm run build → GitHub Pages
 ```
 
-Un test o build fallido bloquea el despliegue. Vite usa `base: './'` para que el mismo artefacto funcione en desarrollo y bajo `/topadero/` en GitHub Pages.
+Un test o build fallido bloquea el despliegue. La CI ensambla un sitio combinado: la **web de marketing** (`marketing/landing/`) en la raíz y el **juego** bajo `/play/`. Vite usa `base: './'` para que el mismo artefacto funcione en desarrollo y bajo cualquier subruta de GitHub Pages.
 
 El build actual incluye Rapier WASM embebido y genera un chunk principal grande (aprox. 2,76 MB sin comprimir). Es una mejora futura de carga, no un bloqueo funcional del MVP.
 

@@ -4,6 +4,8 @@
 # Dependencias y artefactos de build (los crea /speckit-implement)
 node_modules/
 dist/
+# Sitio combinado que ensambla la CI (landing + juego en /play); regenerable
+site/
 
 # Entornos virtuales de Python (p. ej. rembg para preparar art/iconos)
 .venv/

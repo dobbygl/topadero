@@ -28,12 +28,19 @@ jobs:
       - run: npm ci
       # Puerta del Principio II: si los tests fallan, no se sube artefacto ni se despliega.
       - run: npm test
-      # tsc --noEmit && vite build -> ./dist (base relativa para servir bajo /topadero/).
+      # tsc --noEmit && vite build -> ./dist (base relativa './' → sirve bajo cualquier subruta).
       - run: npm run build
+      # Sitio combinado: landing de marketing en la raíz, juego en /play (base relativa lo permite).
+      - name: Ensamblar sitio (landing en raíz + juego en /play)
+        run: |
+          rm -rf site && mkdir -p site
+          cp -rT marketing/landing site
+          rm -rf site/play && mkdir -p site/play
+          cp -rT dist site/play
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: ./dist
+          path: ./site
 
   deploy:
     needs: build
