@@ -61,8 +61,13 @@ async function main(): Promise<void> {
     const ps = sim.getPlayerState()
     camera.update(ps.position, input.yaw, input.pitch, dtRender)
     if (lookZ !== null) {
-      camera.camera.position.set(4.5, 4, lookZ + 5.5)
-      camera.camera.lookAt(0, 2.6, lookZ)
+      if (new URLSearchParams(location.search).has('top')) {
+        camera.camera.position.set(0.01, 16, lookZ) // cenital: leer orientación en XZ
+        camera.camera.lookAt(0, 2, lookZ)
+      } else {
+        camera.camera.position.set(4.5, 4, lookZ + 5.5)
+        camera.camera.lookAt(0, 2.6, lookZ)
+      }
     }
     view.updateDynamic(
       sim.getPreviousPlayerTransform(),

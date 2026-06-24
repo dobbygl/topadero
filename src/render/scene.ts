@@ -309,14 +309,24 @@ export class SceneView {
     this.obstacleMeshes = circuit.obstacles.map((ob) => {
       const he = colliderHalfExtents(ob, config)
       const target = { x: he.x * 2, y: he.y * 2, z: he.z * 2 }
-      const group = buildDynamic(getMesh(catalog, ob.meshUrl), target, () => {
-        const minHE = Math.min(he.x, he.y, he.z)
-        const r = Math.min(config.platformRoundRadius, minHE * config.platformRoundMaxFrac)
-        return new THREE.Mesh(
-          new RoundedBoxGeometry(target.x, target.y, target.z, config.platformRoundSegments, r),
-          new THREE.MeshStandardMaterial({ color: ob.color }),
-        )
-      }, 'fill')
+      const meshClone = getMesh(catalog, ob.meshUrl)
+      // meshYaw orienta la malla (p.ej. el cañón hacia el jugador). Si está presente → escala
+      // uniforme ('cover') para que el giro no cizalle; si no, 'fill' (rellena el collider).
+      const oriented = ob.meshYaw !== undefined
+      if (meshClone && oriented) meshClone.rotation.y = ob.meshYaw as number
+      const group = buildDynamic(
+        meshClone,
+        target,
+        () => {
+          const minHE = Math.min(he.x, he.y, he.z)
+          const r = Math.min(config.platformRoundRadius, minHE * config.platformRoundMaxFrac)
+          return new THREE.Mesh(
+            new RoundedBoxGeometry(target.x, target.y, target.z, config.platformRoundSegments, r),
+            new THREE.MeshStandardMaterial({ color: ob.color }),
+          )
+        },
+        oriented ? 'cover' : 'fill',
+      )
       applyGlossy(group, config.glossy.obstacle)
       this.scene.add(group)
       return group

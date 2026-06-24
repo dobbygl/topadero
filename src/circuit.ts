@@ -52,6 +52,9 @@ export interface ObstacleDefBase {
   color: number
   /** VISUAL-ONLY: malla low-poly (US3); sim/ lo ignora. */
   meshUrl?: string
+  /** VISUAL-ONLY: giro Y (rad) de la malla para orientarla (p.ej. el cañón hacia el jugador).
+   *  Si está presente, el render usa escala uniforme (no 'fill') para que el giro no cizalle. */
+  meshYaw?: number
 }
 export interface OscillateDef extends ObstacleDefBase {
   kind: 'oscillate'
@@ -110,7 +113,7 @@ export const circuit: CircuitDefinition = {
     // Plataforma PORTANTE horizontal (eje Z): puente móvil entre P5 y P6.
     { id: 'carry', kind: 'carry', base: { x: 0, y: 1.5, z: -50 }, color: CARRY, axis: 'z', halfExtents: { x: 2.5, y: 0.4, z: 2.5 }, meshUrl: 'assets/obstacle-carry.glb' },
     // Empujador alternante en P6 (carrera en Z) — malla del cañón (key art).
-    { id: 'pusher', kind: 'pusher', base: { x: 0, y: 3.0, z: -58 }, color: PUSHER, meshUrl: 'assets/obstacle-pusher.glb' },
+    { id: 'pusher', kind: 'pusher', base: { x: 0, y: 3.0, z: -58 }, color: PUSHER, meshUrl: 'assets/obstacle-pusher.glb', meshYaw: Math.PI / 2 },
   ],
   statics: [
     // P0 — plataforma de salida (ancha)
