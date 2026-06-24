@@ -53,16 +53,19 @@ La frontera que organiza todo separa la **simulación** del **render/E-S**:
 - `src/config.ts` es el **único** lugar de los parámetros de ajuste (velocidad, salto,
   umbral de caída, cámara…). No disperses números mágicos por el código (Principio V).
 
-## Reglas no negociables (constitución v1.0.0)
+## Reglas no negociables (constitución v1.1.0)
 
 - **Determinismo / independencia de FPS (Principio II, NO NEGOCIABLE).** El mismo input debe
   producir la misma trayectoria a 30 o 144 FPS. Los **inputs de flanco** (salto), el empuje
   del obstáculo y las comprobaciones de meta/respawn se consumen **dentro del paso fijo**, no
   por fotograma; consumirlos por fotograma es el bug clásico que caza el test de determinismo.
   Si ese test falla, ninguna historia se considera terminada.
-- **Alcance (Principio III).** Solo primitivas (cápsulas, cajas, cilindros); sin modelos,
-  audio, menús, red ni persistencia. Salirse del alcance exige enmendar antes spec y
-  constitución.
+- **Alcance (Principio III).** La geometría de simulación y **colisión** usa solo primitivas
+  (cápsulas, cajas, cilindros); sin audio, menús, red ni persistencia. Salirse del alcance
+  exige enmendar antes spec y constitución. **Excepción acotada (v1.1.0):** se permite arte
+  decorativo (mallas low-poly + texturas) en `src/render` como vista pura, alineado a los
+  colliders y **nunca** como geometría de colisión; `src/sim/` no carga assets. La colisión
+  por mallas (collmesh), el audio y las animaciones riggeadas siguen fuera de alcance.
 - **Rebanadas verticales (Principio IV).** Construir en orden P1 → P2 → P3; cada historia se
   valida (prueba de juego manual del `quickstart.md`) antes de empezar la siguiente.
 - **Rapier.** `@dimforge/rapier3d-compat` requiere `await RAPIER.init()` una vez al arrancar
