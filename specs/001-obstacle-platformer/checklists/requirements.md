@@ -38,5 +38,6 @@
   - **FR-007 — Efecto del obstáculo móvil**: empuje/derribo con impulso que desplaza al personaje y puede tirarlo de la plataforma.
   - **Cronómetro al reaparecer**: sigue corriendo (la caída penaliza el tiempo); el reinicio manual da un crono limpio.
 - Los valores numéricos de ajuste (velocidades, alturas, umbrales, retardos) se han dejado fuera de la spec a propósito: son parámetros de implementación, no decisiones de diseño; describir el comportamiento de forma cualitativa es la altitud correcta para una especificación.
-- Edge case de baja prioridad pendiente (apto para planificación): comportamiento del cronómetro cuando la pestaña del navegador pierde el foco / se pausa el renderizado.
-- Próximo paso recomendado: `/speckit-plan`.
+- **Implementación completada el 2026-06-24**: las tareas P1–P3 y polish constan como terminadas en `tasks.md`; el MVP está publicado en <https://dobbygl.github.io/topadero/>.
+- **Pérdida de foco resuelta**: si `requestAnimationFrame` se pausa, el reloj de simulación también se pausa y no recupera el tiempo transcurrido en segundo plano.
+- **Validación actual**: `npm test` ejecuta cuatro pruebas de determinismo y el workflow de GitHub Pages exige tests y build en verde antes de desplegar.

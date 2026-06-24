@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-obstacle-platformer`  
 **Created**: 2026-06-24  
-**Status**: Draft (con clarificaciones pendientes para `/speckit-clarify`)  
+**Status**: Implemented (MVP publicado el 2026-06-24)
 **Input**: User description: "Prototipo de juego de plataformas de obstáculos en navegador, estilo Fall Guys, jugable por una sola persona en local. El objetivo del MVP es validar que el control de un personaje cápsula sobre un motor de físicas resulta divertido y responde bien, recorriendo un circuito corto hasta una meta. El juego se llama topadero."
 
 ## Clarifications
@@ -67,13 +67,13 @@ Si el jugador cae fuera del circuito, reaparece automáticamente en pocos segund
 
 ### Edge Cases
 
-- ¿Cuenta como completado si el jugador llega a la meta saltándose parte del circuito (un atajo o saltando un tramo)? ¿La única condición es entrar en la zona de meta?
-- ¿Cómo se comporta el salto justo en el borde de una plataforma, en el instante en que el personaje deja de estar apoyado (margen de tolerancia tipo "coyote time")?
-- ¿Qué ocurre si un obstáculo en movimiento empuja al personaje contra una pared o tiende a introducirlo en la geometría? La colisión debe mantenerse estable.
-- ¿Qué ocurre si el personaje cae pero vuelve a tocar una plataforma antes de superar el umbral de altura? No debería producirse respawn.
-- ¿Qué pasa si el jugador reinicia mientras está en el aire, durante un respawn o ya en estado de victoria?
-- ¿Qué le ocurre al cronómetro si la pestaña del navegador pierde el foco o se pausa el renderizado?
-- ¿Qué pasa si el personaje queda atascado (por ejemplo, encajado entre un obstáculo en movimiento y una pared) sin llegar a caer por debajo del umbral? ¿La única salida es el reinicio manual?
+- **Atajos**: completar significa entrar en la zona de meta; no se exige atravesar tramos intermedios.
+- **Salto en el borde**: existe un margen de *coyote time* de 0,08 s.
+- **Empuje contra geometría**: el knockback se mueve mediante el KCC, con velocidad limitada y colliders gruesos para evitar tunneling.
+- **Caída recuperada**: solo hay respawn después de cruzar el umbral vertical; tocar otra plataforma antes lo evita.
+- **Reinicio**: funciona en `idle`, `running` y `won`, incluido mientras el personaje está en el aire.
+- **Pérdida de foco**: al pausarse `requestAnimationFrame`, también se pausa de hecho el tiempo de simulación; al volver no se contabiliza el tiempo en segundo plano.
+- **Atasco**: la salida deliberada es el reinicio manual con `R`.
 
 ## Requirements *(mandatory)*
 

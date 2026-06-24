@@ -6,7 +6,7 @@ No hay base de datos ni persistencia: el "modelo de datos" es el **estado en mem
 
 - Todo lo que afecta a la simulación se actualiza dentro del paso fijo (`FIXED_DT`).
 - Unidades: metros, segundos, radianes. El cronómetro es **tiempo de simulación acumulado**.
-- **Detección contra el jugador cinemático**: siempre por consulta geométrica (`contactCollider` / `intersectionsWithShape`), nunca por grafo narrow-phase ni eventos de sensor (ver research, modelo de detección).
+- **Detección de gameplay implementada**: el KCC resuelve colisiones sólidas; el empuje y la meta usan pruebas AABB deterministas en `Simulation.step()`.
 
 ---
 
@@ -19,13 +19,13 @@ Personaje cápsula (FR-001..FR-005, FR-003, FR-007).
 |---|---|---|
 | `position` | vec3 | Cuerpo `KinematicPositionBased`. |
 | `facingYaw` | number | Orientación **visual** (se interpola en render). *Detalle de feel (Principio I), no exigido por ningún FR/SC.* |
-| `velocity` | vec3 | Velocidad lógica: input horizontal + componente de empuje (knockback) que **decae** cada paso. |
+| `velocity` | vec3 | `.x`/`.z`: SOLO la velocidad de empuje (knockback), que **decae** cada paso; `.y`: velocidad vertical. El movimiento de input NO se almacena aquí (se aplica como desplazamiento por paso). |
 | `verticalVelocity` | number | Componente Y integrada manualmente (gravedad/salto). |
 | `isGrounded` | bool | `computedGrounded()` del último paso; condición de salto. |
 
-- **Regla (salto)**: sólo modifica `verticalVelocity` si `isGrounded` (FR-003, SC-002); sin doble salto. El paso del salto **desactiva snap-to-ground** (o ignora `isGrounded` mientras `verticalVelocity > 0`) para que el snap no anule el impulso. `coyoteTime` (config, recomendado `> 0`) da margen en bordes.
-- **Regla (knockback)**: el empuje del obstáculo se SUMA a `velocity` como velocidad persistente que decae con `knockbackDecay`; se consume vía el move-and-slide del KCC (no teletransporte), por lo que nunca atraviesa geometría sólida (R5).
-- **Regla (colisión)**: se mueve con `computeColliderMovement` **excluyendo sensores** (`QueryFilterFlags.EXCLUDE_SENSORS`); no penetra (FR-004), desliza contra paredes/rampa (FR-005).
+- **Regla (salto)**: solo modifica `verticalVelocity` si está apoyado o dentro de `coyoteTime = 0.08 s`; sin doble salto. Mientras asciende no se aplica snap-to-ground.
+- **Regla (knockback)**: al contacto, el empuje del obstáculo se **fija** en los componentes horizontales de `velocity` (no se acumula) y luego **decae** cada paso con `knockbackDecay`; se consume vía el move-and-slide del KCC (no teletransporte), por lo que nunca atraviesa geometría sólida (R5).
+- **Regla (colisión)**: se mueve con `computeColliderMovement`; no penetra y desliza contra paredes/rampa.
 - Física: cuerpo `kinematicPositionBased` + collider `capsule(halfHeight, radius)`.
 
 ### CameraState (capa de render, no simulación)
@@ -48,7 +48,7 @@ Obstáculo en movimiento (FR-006, FR-007, Q4).
 | `velocityFn(simTime)` | función pura | **Derivada analítica** de `phaseFn`, para la magnitud del empuje. |
 | `kind` | sólido (no sensor) | El KCC también lo trata en move-and-slide. |
 
-- **Regla (detección)**: cada paso fijo, tras avanzar el obstáculo, `playerCollider.contactCollider(obstacleCollider, prediction)`; si `!= null` (o `distance < umbral`), inyecta knockback. `prediction ≥` desplazamiento del obstáculo por paso. Dirección desde la normal del `ShapeContact` (a world-space si rota); magnitud `clamp(knockbackStrength + velObstáculo·normal, knockbackMax)`.
+- **Regla (detección)**: cada paso fijo se comprueba la posición del jugador contra una AABB del obstáculo expandida por el radio/altura de la cápsula y `contactPrediction`. El knockback apunta desde el centro del obstáculo hacia el jugador y su magnitud suma velocidad del obstáculo, limitada por `knockbackMax`.
 
 ### Zone (Start / Finish)
 Salida y meta (FR-008, FR-010).
@@ -56,7 +56,7 @@ Salida y meta (FR-008, FR-010).
 | Campo | Tipo | Notas |
 |---|---|---|
 | `kind` | `'start' \| 'finish'` | |
-| `sensorCollider` | collider sensor | No bloquea al KCC. Detección por `world.intersectionsWithShape(player...)`, NO por eventos de sensor. |
+| `volume` | AABB de datos | Centro y semiextensiones definidos en `circuit.ts`; no crea un collider Rapier. |
 | `visualMesh` | primitiva visible | Losa/portal coloreado solidario → "claramente identificables" (FR-008). |
 | `spawnTransform` | transform | Solo `start`: pose de aparición y respawn. |
 
@@ -73,26 +73,26 @@ Salida y meta (FR-008, FR-010).
 
 - **idle → running**: primer `moveAxis`/`jumpEdge` (Q2). **running → won**: entrar en meta (FR-010). **respawn**: caer bajo umbral → teletransporte a salida, `phase`/`elapsedSimTime` intactos (Q5/FR-011). **reinicio (cualquier fase)**: resetea jugador, obstáculo, `phase=idle`, `elapsedSimTime=0`, `firstInputSeen=false`, descarta flancos (FR-012).
 
-### InputFrame / buffer de input
-Entrada por **fotograma de render**, consumida por el paso fijo.
+### FrameInput, InputEdge y StepInput
+Entrada del navegador y entrada ya resuelta para un paso fijo.
 
 | Campo | Tipo | Notas |
 |---|---|---|
-| `moveAxis` | vec2 | Movimiento del teclado (relativo a cámara). Arranca el crono. |
-| `jumpEdges` | array de timestamps | Flancos de salto con su `event.timeStamp` (reloj). Consumidos **una vez**, en el paso fijo cuyo intervalo `[k·DT,(k+1)·DT)` contiene el timestamp (R7, determinismo). |
-| `restartEdges` | array de timestamps | Ídem para reinicio. |
-| `cameraDelta` | vec2 | Solo `CameraState`; NO arranca el crono ni entra en la sim. |
+| `FrameInput.moveAxis` | vec2 | Estado continuo de teclado. |
+| `FrameInput.cameraYaw` | number | Yaw crudo usado para transformar el movimiento. |
+| `FrameInput.edges` | `InputEdge[]` | Eventos `jump`/`restart` con timestamp; el array persiste entre fotogramas. |
+| `StepInput` | objeto | `moveAxis`, `cameraYaw`, `jump` y `restart` para un único paso fijo. |
 
-- **Regla**: el consumo por timestamp (no "primer paso tras el fotograma") es lo que hace el salto independiente de FPS (R7).
+- **Regla**: `gameLoop.advance()` ventana los `InputEdge`, elimina los consumidos y construye `StepInput`; `Simulation.step()` no procesa timestamps.
 
 ### Config (`config.ts`) — enumeración COMPLETA
 Único lugar de las cifras (Principio V), agrupadas por dominio:
 
 - **Bucle/sim**: `FIXED_DT (1/60)`, `MAX_SUBSTEPS`, `gravity`.
-- **Jugador/KCC**: `capsuleHalfHeight`, `capsuleRadius`, `kccOffset`, `moveSpeed`, `jumpSpeed`, `coyoteTime` (>0), `maxSlopeClimbAngleRad`, `minSlopeSlideAngleRad`, `snapToGroundDistance`, `autostepMaxHeight`, `autostepMinWidth`, `autostepIncludeDynamic`, `enableCcd` (false; no-op en cinemático, documentado).
-- **Cámara**: `cameraDistance`, `cameraHeight`, `cameraTargetOffset`, `cameraUp`, `cameraPitchMin`, `cameraPitchMax`, `cameraSmoothingK`, `mouseSensitivity`, `mouseDeltaClamp`.
-- **Obstáculo**: `obstacleAxis`, `obstacleAmplitude`, `obstacleSpeed` (acotada: desplazamiento/paso < semigrosor), `obstacleHalfExtents`, `knockbackStrength`, `knockbackMax`, `knockbackDecay`, `contactPrediction`.
-- **Zonas/geometría del circuito (R9)**: dimensiones y posiciones de P0–P5, rampa, muros; `startSpawn`, AABB de salida y meta, `FALL_THRESHOLD`.
+- **Jugador/KCC**: `capsuleHalfHeight`, `capsuleRadius`, `kccOffset`, `moveSpeed`, `jumpSpeed`, `coyoteTime`, ángulos de pendiente, snap-to-ground y autostep.
+- **Cámara**: distancia, altura, offset vertical, límites de pitch, suavizado, sensibilidad y clamp del ratón.
+- **Obstáculo**: amplitud, velocidad, semiextensiones, fuerza/máximo/decaimiento del knockback y margen de contacto.
+- **Recuperación**: `fallThreshold`.
 - **Test/determinismo**: `FLOAT_EPSILON` (~1e-6, solo redondeo).
 
 ---
@@ -107,8 +107,8 @@ Entrada por **fotograma de render**, consumida por el paso fijo.
   │                                            ▼
   └──────────────── reinicio (FR-012) ◀───── won
 
- (running) caer bajo umbral → setTranslation(salida,true), velocidad=0, descartar flancos;
+ (running) caer bajo umbral → setTranslation(salida,true), velocidad=0;
             sigue en running, crono NO se reinicia (Q5)
 ```
 
-Listo para contracts y quickstart.
+Estado implementado y sincronizado con `src/` el 2026-06-24.

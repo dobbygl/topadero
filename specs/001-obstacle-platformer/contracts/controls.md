@@ -15,10 +15,10 @@ Mapeo de entrada del jugador a acciones de juego. Las teclas concretas son detal
 ## Reglas del contrato
 
 1. **Arranque del cronómetro (Q2)**: solo el input de **movimiento** o **salto** arranca el intento (`idle → running`). El input de **cámara (ratón)** NO lo arranca: el jugador puede mirar alrededor en la salida sin que corra el tiempo.
-2. **Salto edge-triggered**: "saltar" es un flanco, no un estado mantenido; se captura con su `event.timeStamp` (reloj) y se consume **una sola vez**, en el paso fijo cuyo intervalo de sim-time contiene ese timestamp (no "primer paso tras el fotograma"). Así el salto se dispara al mismo sim-step a cualquier FPS (ver R7 y simulation-api invariante 3). Mantener pulsado no produce saltos repetidos en el aire.
+2. **Salto edge-triggered**: `Input` captura el `keydown` con su `event.timeStamp` y lo conserva en `FrameInput.edges`. `gameLoop.advance()` lo consume una sola vez en la ventana fija correspondiente y entrega `StepInput.jump = true` a `Simulation.step()`. Mantener pulsado no genera flancos adicionales porque se ignoran eventos `repeat`.
 3. **Movimiento relativo a la cámara**: el eje de movimiento del teclado se transforma por el yaw de la cámara antes de entrar en la simulación.
 4. **Reinicio en cualquier fase**: `R` funciona en `idle`, `running` y `won`.
-5. **Pointer lock**: el ratón solo controla la cámara mientras el puntero está capturado; al perder el lock (Esc), el movimiento de ratón se ignora y **re-bloquear exige un nuevo clic** (requisito de gesto de usuario). El delta de ratón por fotograma se **acota** (`mouseDeltaClamp`) o se pide `requestPointerLock({ unadjustedMovement: true })` para evitar saltos bruscos de cámara por picos de `movementX/Y`.
+5. **Pointer lock**: el ratón solo controla la cámara mientras el puntero está capturado; al perder el lock (Esc), el movimiento se ignora y re-bloquear exige un nuevo clic. Cada evento `movementX/Y` se acota con `mouseDeltaClamp`.
 
 ## Salidas hacia el jugador (HUD)
 

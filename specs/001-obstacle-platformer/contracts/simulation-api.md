@@ -6,7 +6,7 @@ Contrato del **núcleo de simulación**: la frontera entre la lógica de juego/f
 
 ```ts
 await RAPIER.init();                       // UNA vez (rapier3d-compat); en main.ts (navegador) o beforeAll (tests)
-const sim = Simulation.create(config);     // mundo + jugador + obstáculo + zonas + geometría estática; estado 'idle'
+const sim = Simulation.create(config);     // mundo + jugador + obstáculo + geometría estática; estado 'idle'
 ```
 
 - `Simulation.create(config)` no importa Three.js ni toca el DOM → instanciable en Node (Vitest).
@@ -15,27 +15,42 @@ const sim = Simulation.create(config);     // mundo + jugador + obstáculo + zon
 ## Avance del estado
 
 ```ts
-sim.step(input: InputFrame): void;   // EXACTAMENTE un paso de física de tamaño FIXED_DT
+sim.step(input: StepInput): void;   // EXACTAMENTE un paso de física de tamaño FIXED_DT
 ```
 
-**Orden interno de `step()` (load-bearing para el determinismo; fijo):**
+`StepInput` ya está asociado a un paso concreto:
 
-1. Avanzar el obstáculo: `phaseFn(simTime)` → `setNextKinematicTranslation/Rotation`.
-2. Integrar en el vector deseado del jugador: gravedad + movimiento (de `moveAxis`, relativo al yaw crudo) + knockback persistente (decae).
-3. `computeColliderMovement(playerCollider, desiredDelta, EXCLUDE_SENSORS, ...)` → `setNextKinematicTranslation(pos + computedMovement())`.
-4. Leer `computedGrounded()`.
-5. Consultas geométricas (no narrow-phase): empuje `contactCollider(player, obstacle, prediction)`; meta/salida `intersectionsWithShape(player...)`; caída `player.y < FALL_THRESHOLD` → respawn (`setTranslation`, vel=0, descartar flancos).
-6. Consumir los flancos (`jumpEdges`/`restartEdges`) **cuyo timestamp cae en el intervalo `[simTime, simTime+FIXED_DT)`**, exactamente una vez. Avanzar `simTime += FIXED_DT` y `elapsedSimTime` si `running`.
+```ts
+interface StepInput {
+  moveAxis: { x: number; y: number }
+  cameraYaw: number
+  jump: boolean
+  restart: boolean
+}
+```
 
-> Se acepta una latencia de **un paso** en el empuje (la consulta refleja la pose del obstáculo ya avanzada en este paso). Determinista.
+La frontera timestamp → paso fijo vive en `core/gameLoop.ts`: `advance()` recibe `FrameInput`, calcula la ventana temporal de cada paso, consume los eventos que caen en ella y construye `StepInput`.
+
+**Orden interno implementado de `step()`:**
+
+1. Capturar transformaciones anteriores para interpolación.
+2. Si `restart` está activo, reiniciar jugador, obstáculo, estado y tiempo de simulación.
+3. Programar la siguiente posición cinemática del obstáculo mediante `obstaclePosition(t + dt)`.
+4. Detectar proximidad jugador↔obstáculo con una AABB expandida y actualizar el knockback persistente.
+5. Integrar gravedad, movimiento relativo a `cameraYaw`, salto y knockback mediante el KCC.
+6. Ejecutar `world.step()` para aplicar las traslaciones cinemáticas.
+7. Actualizar la máquina de estados, acumular el cronómetro, comprobar la meta por AABB y aplicar respawn si `player.y < fallThreshold`.
+8. Avanzar `simTime` en `FIXED_DT`.
+
+> La detección de empuje usa la pose actual del obstáculo antes de `world.step()`, por lo que su respuesta puede tener una latencia de un paso. Es determinista.
 
 **Invariantes del contrato** (lo que el test verifica):
 
 1. `step()` avanza siempre `FIXED_DT`; no acepta dt variable. El troceado del reloj en pasos es del bucle (`core/gameLoop.ts`), no del núcleo.
-2. **Independencia de FPS exacta**: dado el mismo estado inicial y la misma línea de inputs con timestamps, el estado a **igual nº de pasos fijos** es idéntico salvo epsilon de redondeo float (`FLOAT_EPSILON ~1e-6`), **con independencia de la cadencia de fotogramas** que generó esos pasos. Sin tolerancia perceptual.
-3. Los flancos se consumen **exactamente una vez**, en el paso cuyo intervalo de sim-time contiene su timestamp (no "primer paso tras el fotograma"). Esto hace el salto independiente de FPS.
-4. Todas las lecturas que afectan a la simulación (salto, empuje, meta, salida, umbral) ocurren dentro de `step()`.
-5. Hot path **libre de no-determinismo**: sin `Date.now`/`performance.now`/`Math.random`; reducción determinista de los callbacks de consulta (p. ej. primer hit por handle ordenado); sin iteración dependiente del orden de inserción de `Map`/`Set`.
+2. **Independencia de FPS**: dado el mismo estado inicial y la misma secuencia de `StepInput`, el estado a igual número de pasos es idéntico salvo `FLOAT_EPSILON = 1e-6`.
+3. `step()` no conoce timestamps ni FPS; solo recibe los booleanos `jump` y `restart` resueltos por el bucle.
+4. Salto, empuje, meta y umbral de caída se evalúan dentro de `step()`.
+5. El hot path no usa `Date.now`, `performance.now` ni `Math.random`.
 
 ## Lectura de estado (solo lectura, para las vistas)
 
@@ -59,10 +74,10 @@ sim.getCircuitDefinition(): Readonly<CircuitDefinition>;  // plataformas, rampa,
 | Invariante / método | Requisitos / SC |
 |---|---|
 | `step()` fijo + invariante 2 (igualdad exacta) | FR-013, SC-004, Principio II |
-| invariante 3 (flancos por timestamp, una vez) | FR-003, SC-002 |
-| orden paso 5 (contactCollider) | FR-007 |
-| orden paso 5 (intersectionsWithShape meta) | FR-010, SC-006 |
-| orden paso 5 (umbral → setTranslation) | FR-011, SC-005 |
+| `advance()` ventana flancos y crea `StepInput` | FR-003, SC-002, FR-013 |
+| AABB expandida jugador↔obstáculo | FR-007 |
+| AABB de meta tras `world.step()` | FR-010, SC-006 |
+| umbral → `setTranslation` | FR-011, SC-005 |
 | `elapsedSimTime` (tiempo de sim) | FR-009, SC-006 |
 | `getCircuitDefinition()` + zonas visibles | FR-006, FR-008 |
 
@@ -70,5 +85,5 @@ sim.getCircuitDefinition(): Readonly<CircuitDefinition>;  // plataformas, rampa,
 
 - `Simulation.create(config)` fresca en Node.
 - Misma línea de inputs **con timestamps** sobre 4 cadencias: 60 Hz, jitter (5/40/8 ms), **30 Hz** y 144 Hz (30 vs 144 casa con SC-004).
-- Input entregado **por fotograma**; compara estado a **igual nº de pasos**; igualdad exacta (epsilon float).
-- Un salto colocado cerca de una frontera de subpaso: una regresión al consumo "primer paso tras fotograma" lo desplazaría de sim-step y el test fallaría. El test crece por historia (salto P1, empuje P2, respawn/umbral P3).
+- `FrameInput` se entrega por fotograma a `advance()`; el bucle construye los `StepInput` y compara el estado a igual número de pasos.
+- Cubre cuatro escenarios: salto cerca de una frontera, recorrido largo con saltos, caída lateral con respawn y función/derivada del obstáculo.

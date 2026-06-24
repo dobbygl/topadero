@@ -2,6 +2,7 @@
 
 **Branch**: `001-obstacle-platformer` | **Date**: 2026-06-24 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `specs/001-obstacle-platformer/spec.md`
+**Status**: Implemented and deployed to <https://dobbygl.github.io/topadero/>
 
 ## Summary
 
@@ -11,10 +12,10 @@ Enfoque técnico: un **núcleo de simulación headless** (Rapier WASM: mundo fí
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5.x (target ES2022, ESM), Node.js 20+ para tooling  
-**Primary Dependencies**: Three.js (render WebGL2), `@dimforge/rapier3d-compat` (físicas WASM, init asíncrona; mismo paquete en navegador y en Node para tests), Vite (dev server + build)  
+**Language/Version**: TypeScript 6.x (target ES2022, ESM), Node.js 22 en CI
+**Primary Dependencies**: Three.js `^0.184`, `@dimforge/rapier3d-compat` `^0.19.3`, Vite 8
 **Storage**: N/A. Sin persistencia más allá de la sesión (sin backend, sin red, sin localStorage). El mejor tiempo no se guarda; solo se muestra el tiempo del intento.  
-**Testing**: Vitest. Puerta automática mínima obligatoria: test de determinismo / independencia de FPS del núcleo de simulación (Principio II). El resto de tests son opcionales. Puerta principal: prueba de juego manual contra los *Acceptance Scenarios* y *Success Criteria*.  
+**Testing**: Vitest 4. Cuatro pruebas de determinismo sobre 60/jitter/30/144 Hz; prueba manual reutilizable en `quickstart.md`.
 **Target Platform**: Navegador de escritorio moderno con WebGL2 y WebAssembly.  
 **Project Type**: Aplicación de navegador de un solo proyecto (solo frontend).  
 **Performance Goals**: ≥ 60 FPS de render en navegador de escritorio típico (SC-008); física a paso fijo 60 Hz, independiente de la tasa de fotogramas (SC-004, FR-013).  
@@ -39,7 +40,9 @@ Evaluación contra la Constitución de Topadero v1.0.0:
 
 **Resultado del gate (pre-Phase 0)**: PASS. Sin violaciones que justificar en *Complexity Tracking*.
 
-**Re-evaluación post-Phase 1 (tras verificación multi-agente con docs)**: PASS. Una pasada de verificación (6 investigadores contra documentación oficial + 4 revisores adversariales) confirmó la arquitectura y corrigió tres puntos que habrían roto historias centrales, ya incorporados a research/data-model/contracts: (a) la detección contra el jugador cinemático NO puede usar narrow-phase/eventos de sensor (`ActiveCollisionTypes` excluye KINEMATIC_KINEMATIC/KINEMATIC_FIXED por defecto) → se usa consulta geométrica (`contactCollider`/`intersectionsWithShape`); (b) CCD es no-op en cuerpos cinemáticos → el anti-tunneling es el barrido del KCC + clamp + colliders gruesos, con el knockback enrutado por el KCC; (c) la métrica del test pasa a igualdad exacta por consumo de flancos con timestamp (evita el falso fallo y el knob de tolerancia). El diseño no introduce violaciones nuevas; refuerza II y V. *Complexity Tracking* permanece vacío.
+**Re-evaluación post-Phase 1**: PASS. La verificación confirmó el KCC, el descarte de CCD para cuerpos cinemáticos, el knockback enrutado por move-and-slide y el modelo de input con timestamp. Durante la implementación, las consultas de empuje/meta se simplificaron a AABB deterministas sin alterar requisitos ni principios.
+
+**Reconciliación post-implementación**: PASS. El código final conserva el núcleo headless, paso fijo, KCC, interpolación y test multi-cadencia. Simplifica dos decisiones: empuje/meta se detectan con AABB deterministas y `gameLoop.advance()` —no `Simulation.step()`— ventana los flancos con timestamp.
 
 ## Project Structure
 
@@ -47,14 +50,14 @@ Evaluación contra la Constitución de Topadero v1.0.0:
 
 ```text
 specs/001-obstacle-platformer/
-├── plan.md              # Este archivo (/speckit-plan)
-├── research.md          # Phase 0 (/speckit-plan)
-├── data-model.md        # Phase 1 (/speckit-plan)
-├── quickstart.md        # Phase 1 (/speckit-plan)
-├── contracts/           # Phase 1 (/speckit-plan)
+├── plan.md              # Plan original + reconciliación final
+├── research.md          # Decisiones y resultado implementado
+├── data-model.md        # Estado en memoria actual
+├── quickstart.md        # Ejecución y regresión manual
+├── contracts/           # Fronteras actuales
 │   ├── simulation-api.md   # Seam del núcleo de simulación (lo que ejercita el test de determinismo)
 │   └── controls.md         # Mapeo de entrada → acción
-└── tasks.md             # Phase 2 (/speckit-tasks — NO lo crea /speckit-plan)
+└── tasks.md             # Registro de tareas completadas
 ```
 
 ### Source Code (repository root)
@@ -72,10 +75,10 @@ src/
 ├── core/
 │   └── gameLoop.ts            # Bucle de paso fijo con acumulador, clamp anti-espiral, interpolación de render; mapea timestamps de flancos a pasos
 ├── sim/                       # NÚCLEO HEADLESS — no importa Three.js ni toca el DOM; sin Date.now/Math.random en el hot path
-│   ├── simulation.ts          # Posee el mundo Rapier; step(inputFrame) (dt fijo interno) y estado de solo lectura; orden de step() del contrato
-│   ├── player.ts              # KCC + cápsula: gravedad manual, move-and-slide (excluye sensores), grounded, salto (desactiva snap ese paso), knockback decae vía KCC
-│   ├── movingObstacle.ts      # Obstáculo cinemático SÓLIDO; phaseFn(simTime)+derivada; empuje por contactCollider
-│   ├── zones.ts               # Salida/meta como sensores; detección por intersectionsWithShape; umbral de caída → respawn (setTranslation)
+│   ├── simulation.ts          # Mundo Rapier; step(StepInput), AABB de empuje/meta, respawn y lecturas
+│   ├── player.ts              # KCC + cápsula: gravedad, move-and-slide, grounded, coyote time y knockback
+│   ├── movingObstacle.ts      # Trayectoria cinemática pura y derivada
+│   ├── zones.ts               # Función pura de pertenencia a AABB
 │   └── runState.ts            # Máquina de estados del intento (idle/running/won) y cronómetro (tiempo de sim)
 ├── input/
 │   └── input.ts               # Teclado + ratón (pointer lock); distingue movimiento/salto vs cámara; flancos con event.timeStamp; clamp del delta de ratón
@@ -90,6 +93,10 @@ tests/
 ```
 
 **Structure Decision**: Proyecto único de frontend. La línea divisoria que importa es `src/sim/` (núcleo de simulación, puro respecto a Three.js y el DOM) frente a `src/render/`, `src/ui/` e `src/input/` (vistas y adaptadores de E/S). El núcleo es instanciable sin navegador, lo que permite que `tests/determinism.test.ts` lo ejercite con `@dimforge/rapier3d-compat` en Node. `config.ts` concentra todo el ajuste. Esta separación es la que sostiene los Principios II (verificable) y V (simple y ajustable).
+
+## Delivery
+
+`.github/workflows/deploy.yml` ejecuta `npm ci`, `npm test` y `npm run build` en cada push a `main`, y publica `dist/` en GitHub Pages. `vite.config.ts` usa `base: './'`. El bundle principal incluye Rapier WASM embebido y actualmente genera una advertencia de tamaño (~2,76 MB sin comprimir), aceptada para el MVP.
 
 ## Complexity Tracking
 
