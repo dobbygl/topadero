@@ -4,8 +4,10 @@
 
 import * as RAPIER from '@dimforge/rapier3d-compat'
 import { advance, createLoopState } from './core/gameLoop'
+import { quatFromYaw } from './types'
 import { FollowCamera } from './render/followCamera'
 import { SceneView } from './render/scene'
+import { loadAssets } from './render/assets'
 import { Input } from './input/input'
 import { Hud } from './ui/hud'
 import { Simulation } from './sim/simulation'
@@ -14,8 +16,10 @@ async function main(): Promise<void> {
   await RAPIER.init()
 
   const sim = Simulation.create()
+  // Carga de assets ANTES de jugar: ninguna latencia entra en el paso fijo (FR-016).
+  const assets = await loadAssets(sim.getCircuitDefinition())
   const app = document.getElementById('app') as HTMLElement
-  const view = new SceneView(app, sim.getCircuitDefinition())
+  const view = new SceneView(app, sim.getCircuitDefinition(), assets)
   view.resize()
 
   const camera = new FollowCamera(view.aspect)
@@ -45,9 +49,9 @@ async function main(): Promise<void> {
     camera.update(ps.position, input.yaw, input.pitch, dtRender)
     view.updateDynamic(
       sim.getPreviousPlayerTransform(),
-      { position: ps.position, rotationY: ps.facingYaw },
-      sim.getPreviousObstacleTransforms()[0],
-      sim.getObstacleTransforms()[0],
+      { position: ps.position, quaternion: quatFromYaw(ps.facingYaw) },
+      sim.getPreviousObstacleTransforms(),
+      sim.getObstacleTransforms(),
       loop.alpha,
     )
     hud.update(sim.getRunState())

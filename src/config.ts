@@ -40,9 +40,37 @@ export const config = {
   obstacleSpeed: 1.6, // rad/s de la fase senoidal
   obstacleHalfExtents: { x: 0.6, y: 0.8, z: 2.6 }, // caja gruesa (anti tunneling)
   knockbackStrength: 11, // m/s de empuje base al contacto
+  knockbackThrowStrength: 16, // m/s de "tirón" (péndulo): impulso más fuerte que el empuje base
   knockbackMax: 18, // m/s tope del empuje (anti tunneling)
   knockbackDecay: 6, // 1/s de decaimiento de la velocidad de empuje
   contactPrediction: 0.15, // margen de detección de contactCollider (>= despl. del obstáculo por paso)
+
+  // --- Obstáculos nuevos (002 · US1). Magnitudes por tipo (Principio V); afinar en playtest. ---
+  rotateBar: {
+    halfExtents: { x: 3.2, y: 0.35, z: 0.45 }, // brazo largo en X (gira alrededor de Y)
+    angularSpeed: 1.4, // rad/s
+  },
+  pendulum: {
+    armLength: 4.0, // del pivote al centro del bob
+    bobHalfExtents: { x: 0.9, y: 0.9, z: 0.9 },
+    amplitude: 1.0, // rad (amplitud angular del vaivén alrededor de X)
+    angularSpeed: 1.7, // rad/s de la fase
+  },
+  pusher: {
+    halfExtents: { x: 1.3, y: 1.0, z: 1.0 },
+    stroke: 2.6, // m de carrera en Z
+    speed: 1.5, // rad/s de la fase
+  },
+  carry: {
+    amplitude: 3.5, // m de recorrido horizontal
+    speed: 1.0, // rad/s de la fase
+    supportBandY: 0.35, // banda Y sobre la cara superior para el test de soporte (R-carry)
+  },
+
+  // --- Vestido gráfico 2D (002 · US2). Solo ajuste visual; las RUTAS de asset van en circuit.ts. ---
+  textureRepeat: 3, // repeticiones (tiling) de las texturas de superficie
+  signageHeight: 2.2, // m de alto de los carteles de salida/meta sobre su losa
+  maxTextureSize: 1024, // presupuesto de generación: lado máx. de textura (R6)
 
   // --- Recuperación ---
   fallThreshold: -8, // y por debajo del cual se reaparece

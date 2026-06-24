@@ -3,16 +3,18 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 <!-- SPECKIT START -->
-Active feature: 001-obstacle-platformer (Topadero — prototipo de circuito de obstáculos).
+Active feature: 002-obstacle-variety-and-art (Topadero — variedad de obstáculos + vestido gráfico).
 Stack: TypeScript + Vite + Three.js + @dimforge/rapier3d-compat (físicas WASM).
 Arquitectura: núcleo de simulación headless (src/sim/) con paso de tiempo fijo
 (acumulador) desacoplado del render; Three.js, HUD y cámara son vistas puras;
-todo el ajuste centralizado en src/config.ts. Puerta automática no negociable:
-test de determinismo / independencia de FPS (Principio II de la constitución).
+todo el ajuste centralizado en src/config.ts. El arte decorativo (mallas low-poly +
+texturas, excepción v1.1.0) vive solo en src/render, alineado a colliders primitivos,
+nunca como geometría de colisión. Puerta automática no negociable: test de
+determinismo / independencia de FPS (Principio II de la constitución).
 
 For technologies, project structure, shell commands and other context, read the
-current plan: specs/001-obstacle-platformer/plan.md
-(spec: specs/001-obstacle-platformer/spec.md ·
+current plan: specs/002-obstacle-variety-and-art/plan.md
+(spec: specs/002-obstacle-variety-and-art/spec.md ·
 constitución: .specify/memory/constitution.md)
 <!-- SPECKIT END -->
 
