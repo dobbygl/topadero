@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Topadero</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #0e0f12; }
+      #app { position: fixed; inset: 0; }
+      #app canvas { display: block; }
+      #hud {
+        position: fixed; inset: 0; pointer-events: none;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #eef;
+      }
+      #hud .timer {
+        position: absolute; top: 14px; left: 16px;
+        font-size: 28px; font-variant-numeric: tabular-nums;
+        text-shadow: 0 1px 3px rgba(0,0,0,.7);
+      }
+      #hud .hint {
+        position: absolute; bottom: 14px; left: 16px;
+        font-size: 13px; opacity: .7;
+      }
+      #hud .banner {
+        position: absolute; inset: 0; display: none;
+        align-items: center; justify-content: center; flex-direction: column;
+        background: rgba(8,9,12,.55); text-align: center;
+      }
+      #hud .banner.show { display: flex; }
+      #hud .banner h1 { margin: 0 0 8px; font-size: 44px; letter-spacing: 2px; }
+      #hud .banner p { margin: 0; font-size: 20px; }
+      #click-to-play {
+        position: absolute; inset: 0; display: flex;
+        align-items: center; justify-content: center;
+        font-family: ui-monospace, monospace; color: #cce; font-size: 18px;
+        background: rgba(8,9,12,.4); cursor: pointer;
+      }
+      #click-to-play.hidden { display: none; }
+    </style>
+    <script type="module" crossorigin src="./assets/index-B30W7Q0-.js"></script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="hud"></div>
+    <div id="click-to-play">Haz clic para jugar · WASD/flechas mover · Espacio saltar · R reiniciar · ratón cámara</div>
+  </body>
+</html>

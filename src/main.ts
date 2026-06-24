@@ -4,8 +4,10 @@
 
 import * as RAPIER from '@dimforge/rapier3d-compat'
 import { advance, createLoopState } from './core/gameLoop'
+import { quatFromYaw } from './types'
 import { FollowCamera } from './render/followCamera'
 import { SceneView } from './render/scene'
+import { loadAssets } from './render/assets'
 import { Input } from './input/input'
 import { Hud } from './ui/hud'
 import { Simulation } from './sim/simulation'
@@ -14,8 +16,10 @@ async function main(): Promise<void> {
   await RAPIER.init()
 
   const sim = Simulation.create()
+  // Carga de assets ANTES de jugar: ninguna latencia entra en el paso fijo (FR-016).
+  const assets = await loadAssets(sim.getCircuitDefinition())
   const app = document.getElementById('app') as HTMLElement
-  const view = new SceneView(app, sim.getCircuitDefinition())
+  const view = new SceneView(app, sim.getCircuitDefinition(), assets)
   view.resize()
 
   const camera = new FollowCamera(view.aspect)
@@ -28,6 +32,8 @@ async function main(): Promise<void> {
     clickToPlay.classList.add('hidden')
     input.requestLock()
   })
+  // Modo captura (?shot): oculta el overlay para screenshots limpios del escenario.
+  if (new URLSearchParams(location.search).has('shot')) clickToPlay.classList.add('hidden')
 
   window.addEventListener('resize', () => {
     view.resize()
@@ -45,11 +51,12 @@ async function main(): Promise<void> {
     camera.update(ps.position, input.yaw, input.pitch, dtRender)
     view.updateDynamic(
       sim.getPreviousPlayerTransform(),
-      { position: ps.position, rotationY: ps.facingYaw },
-      sim.getPreviousObstacleTransforms()[0],
-      sim.getObstacleTransforms()[0],
+      { position: ps.position, quaternion: quatFromYaw(ps.facingYaw) },
+      sim.getPreviousObstacleTransforms(),
+      sim.getObstacleTransforms(),
       loop.alpha,
     )
+    view.updatePlayerAnimation(ps.isGrounded, dtRender)
     hud.update(sim.getRunState())
     view.render(camera.camera)
     requestAnimationFrame(frame)
@@ -57,4 +64,12 @@ async function main(): Promise<void> {
   requestAnimationFrame(frame)
 }
 
-void main()
+main().catch((e: unknown) => {
+  const el = document.getElementById('hud')
+  const err = e instanceof Error ? (e.stack ?? e.message) : String(e)
+  if (el) el.innerHTML =
+    '<pre style="color:#fff;background:#900;padding:12px;white-space:pre-wrap;font:12px monospace;position:fixed;inset:0;margin:0;overflow:auto;z-index:99">' +
+    err +
+    '</pre>'
+  console.error(e)
+})

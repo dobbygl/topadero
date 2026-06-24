@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Topadero: prototipo de plataformas de obstáculos en el navegador</title>
+  <meta name="description" content="Topadero es un prototipo de plataformas de obstáculos para el navegador, estilo Fall Guys, de un jugador. Físicas deterministas: el mismo input traza la misma trayectoria a 30 o a 144 FPS." />
+  <meta name="theme-color" content="#7EC8F3" />
+
+  <!-- Social. TODO al desplegar: og:image/twitter:image deben ser URL ABSOLUTAS
+       (https://tu-dominio/assets/og.jpg); los scrapers no resuelven rutas relativas. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Topadero: batir tu tiempo es todo el juego" />
+  <meta property="og:description" content="Prototipo de plataformas de obstáculos en el navegador. Físicas deterministas: misma trayectoria a 30 o 144 FPS." />
+  <meta property="og:image" content="assets/og.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Topadero: batir tu tiempo es todo el juego" />
+  <meta name="twitter:description" content="Prototipo de plataformas de obstáculos en el navegador. Físicas deterministas: misma trayectoria a 30 o 144 FPS." />
+  <meta name="twitter:image" content="assets/og.jpg" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
+  <!-- Fuentes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,900&family=Hanken+Grotesk:wght@400;500;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <script>
+    /* Marca que hay JS (evita el flash del reveal). Red de seguridad: si main.js
+       no llega a inicializar, se muestran todos los bloques igualmente. */
+    document.documentElement.className += " js";
+    addEventListener("load", function () {
+      setTimeout(function () {
+        if (window.__revealInit) return;
+        var els = document.querySelectorAll("[data-reveal]");
+        for (var i = 0; i < els.length; i++) els[i].classList.add("is-in");
+      }, 1600);
+    });
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Saltar al contenido</a>
+  <div class="scroll-progress" aria-hidden="true"></div>
+
+  <!-- ====================== Header ====================== -->
+  <header class="header">
+    <a class="header__brand" href="#p0-hero" aria-label="Topadero, inicio">
+      <img src="assets/logo.webp" alt="Topadero" width="600" height="156" />
+    </a>
+    <nav class="header__nav" aria-label="Secciones">
+      <a href="#p1-que-es">Qué es</a>
+      <a href="#p2-telemetria">Cómo funciona</a>
+      <a href="#p3-circuito">El circuito</a>
+      <a href="#p5-controles">Controles</a>
+    </nav>
+    <span class="header__cta">
+      <a class="btn btn--primary" href="play/">Juega ahora</a>
+    </span>
+  </header>
+
+  <!-- ====================== Eje del circuito (scrollspy) ====================== -->
+  <nav class="rail" aria-label="Estaciones del circuito">
+    <ol class="rail__list">
+      <li><a class="rail__link" href="#p0-hero" aria-current="true"><span class="rail__dot"></span><span class="rail__label">p0</span></a></li>
+      <li><a class="rail__link" href="#p1-que-es"><span class="rail__dot"></span><span class="rail__label">p1</span></a></li>
+      <li><a class="rail__link" href="#p2-telemetria"><span class="rail__dot"></span><span class="rail__label">p2</span></a></li>
+      <li><a class="rail__link" href="#p3-circuito"><span class="rail__dot"></span><span class="rail__label">p3</span></a></li>
+      <li><a class="rail__link" href="#p4-obstaculo"><span class="rail__dot"></span><span class="rail__label">p4</span></a></li>
+      <li><a class="rail__link" href="#p5-controles"><span class="rail__dot"></span><span class="rail__label">p5</span></a></li>
+      <li><a class="rail__link rail__link--meta" href="#meta-cierre"><span class="rail__dot"></span><span class="rail__label">meta</span></a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+    <!-- ====================== p0 · Hero ====================== -->
+    <section id="p0-hero" class="band hero">
+      <div class="wrap">
+        <div class="hero__grid">
+          <div class="hero__copy">
+            <p class="eyebrow">p0 · salida</p>
+            <h1 class="hero__title">Batir tu tiempo<br />es todo el juego.</h1>
+            <p class="hero__sub">Topadero es un prototipo de plataformas de obstáculos para el navegador, estilo Fall Guys, de un solo jugador en local. Mueves una cápsula naranja por un circuito corto y peleas contra el cronómetro. Ya se juega: es un prototipo, hay poco y es pronto, pero funciona en el navegador y el desarrollo es abierto.</p>
+            <p class="hero__data mono-strip">
+              <span>CRONO <span class="crono" id="hero-crono">00:00.000</span></span>
+              <span class="sep">·</span><span>p0 → meta</span>
+              <span class="sep">·</span><span>jugable ya</span>
+            </p>
+            <div class="hero__actions">
+              <a class="btn btn--primary btn--lg" href="play/">Juega ahora</a>
+              <a class="btn btn--ghost btn--lg" href="#p2-telemetria">Cómo funciona</a>
+            </div>
+          </div>
+          <div class="hero__stage">
+            <span class="hero__shadow" aria-hidden="true"></span>
+            <img class="hero__blob anim-breathe" src="assets/mascot-run.webp" width="643" height="732" alt="La cápsula naranja de Topadero corriendo" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================== p1 · Qué es ====================== -->
+    <section id="p1-que-es" class="band">
+      <div class="wrap">
+        <div class="obstacle__grid">
+          <div data-reveal>
+            <p class="eyebrow">p1 · qué es</p>
+            <h2 class="h2">Un muñeco que da gusto mover.</h2>
+            <p class="lead">Toda la apuesta del prototipo cabe en una frase: que mover la cápsula se sienta bien. Controlas al blob en tercera persona, con una cámara orbital que lo sigue suave mientras giras con el ratón. El salto va solo cuando estás apoyado, sin doble salto, así que cada brinco se piensa. No hay menús ni historia: hay un circuito, un reloj y tú.</p>
+            <p class="mono-strip" style="margin-top:20px">
+              <span><b>WASD</b></span><span class="sep">·</span>
+              <span><b>ESPACIO</b></span><span class="sep">·</span>
+              <span><b>RATÓN</b></span><span class="sep">·</span>
+              <span><b>R</b></span>
+            </p>
+          </div>
+          <div class="hero__stage" data-reveal data-reveal-delay="1">
+            <span class="hero__shadow" aria-hidden="true"></span>
+            <img class="hero__blob" src="assets/mascot-wave.webp" width="587" height="657" loading="lazy" alt="La cápsula naranja saludando" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================== p2 · Telemetría (firma) ====================== -->
+    <section id="p2-telemetria" class="band">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>p2 · firma</p>
+        <h2 class="h2" data-reveal>Mismo input, misma trayectoria.</h2>
+        <p class="lead" data-reveal>La regla del proyecto no se negocia: la física es determinista e independiente de la tasa de fotogramas. A 30 o a 144 FPS, el mismo salto cae en el mismo sitio. No es un eslogan, es una puerta de calidad: hay un test de determinismo que tiene que pasar, y si no pasa, no se da por terminada ninguna parte del juego. Abajo lo ves dibujado: dos trazas del arco de salto a distintos FPS que se calcan hasta el último píxel.</p>
+
+        <figure class="signature" data-reveal>
+          <div class="signature__head">
+            <figcaption class="signature__caption">demostración · misma trayectoria a 30 / 60 / 144 FPS</figcaption>
+            <span class="signature__crono" id="sig-crono" aria-hidden="true">00:00.000</span>
+          </div>
+          <svg class="scope" viewBox="0 0 480 240" role="img"
+               aria-label="Dos trazas del arco de salto de la cápsula, una a 30 FPS en naranja y otra a 144 FPS en teal, superpuestas y cayendo en el mismo punto de aterrizaje. La trayectoria es la misma a cualquier tasa de fotogramas.">
+            <g class="grid" aria-hidden="true">
+              <line x1="40" y1="70" x2="465" y2="70" />
+              <line x1="40" y1="110" x2="465" y2="110" />
+              <line x1="40" y1="150" x2="465" y2="150" />
+              <line x1="140" y1="30" x2="140" y2="200" />
+              <line x1="240" y1="30" x2="240" y2="200" />
+              <line x1="340" y1="30" x2="340" y2="200" />
+              <line x1="440" y1="30" x2="440" y2="200" />
+            </g>
+            <g class="axis" aria-hidden="true">
+              <line x1="40" y1="30" x2="40" y2="200" />
+              <line x1="40" y1="200" x2="465" y2="200" />
+            </g>
+            <!-- mismo path para las dos trazas: por eso se calcan -->
+            <path class="trace trace--30" d="M40 195 C90 80 130 55 160 55 C200 55 235 130 270 195 C305 165 335 135 360 135 C390 135 420 170 450 195" />
+            <path class="trace trace--144" d="M40 195 C90 80 130 55 160 55 C200 55 235 130 270 195 C305 165 335 135 360 135 C390 135 420 170 450 195" />
+            <circle class="land" cx="270" cy="195" r="4.5" />
+            <g aria-hidden="true">
+              <text x="30" y="40" text-anchor="end">alto</text>
+              <text x="455" y="216">t</text>
+              <text x="276" y="214">aterrizaje</text>
+              <text x="360" y="232">dt fijo 1/60 s</text>
+            </g>
+          </svg>
+          <div class="signature__legend" aria-hidden="true">
+            <span class="key"><span class="swatch swatch--30"></span>30 FPS</span>
+            <span class="key"><span class="swatch swatch--144"></span>144 FPS</span>
+            <span class="key">misma trayectoria</span>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ====================== p3 · El circuito ====================== -->
+    <section id="p3-circuito" class="band">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>p3 · el circuito</p>
+        <h2 class="h2" data-reveal>De p0 a meta, en orden.</h2>
+        <p class="lead" data-reveal>El nivel es una secuencia corta de primitivas: cápsulas, cajas y cilindros, sin un solo modelo 3D. Sales en p0, encadenas plataformas hasta p5, subes una rampa y esquivas un obstáculo en movimiento antes de cruzar la meta. Cada pieza tiene su física y su sitio. Aquí la numeración está ganada, porque esto es de verdad una secuencia.</p>
+
+        <ol class="circuit" data-reveal>
+          <li class="station">
+            <span class="station__id">p0 · salida</span>
+            <img class="station__img" src="assets/prop-platform-teal.webp" width="760" height="495" loading="lazy" alt="Plataforma de salida" />
+            <h3 class="station__name">Plataforma</h3>
+            <p class="station__note">apoyo ancho</p>
+          </li>
+          <li class="chevron" aria-hidden="true">›</li>
+          <li class="station">
+            <span class="station__id">p2 · rampa</span>
+            <img class="station__img" src="assets/prop-ramp.webp" width="760" height="721" loading="lazy" alt="Rampa inclinada" />
+            <h3 class="station__name">Rampa</h3>
+            <p class="station__note">subes de nivel</p>
+          </li>
+          <li class="chevron" aria-hidden="true">›</li>
+          <li class="station">
+            <span class="station__id">p3 · tramo</span>
+            <img class="station__img" src="assets/prop-platform-pink.webp" width="760" height="524" loading="lazy" alt="Plataforma intermedia" />
+            <h3 class="station__name">Plataforma</h3>
+            <p class="station__note">paso medio</p>
+          </li>
+          <li class="chevron" aria-hidden="true">›</li>
+          <li class="station">
+            <span class="station__id">p4 · obstáculo</span>
+            <img class="station__img" src="assets/prop-pendulum.webp" width="760" height="407" loading="lazy" alt="Obstáculo en movimiento" />
+            <h3 class="station__name">Obstáculo</h3>
+            <p class="station__note">te empuja</p>
+          </li>
+          <li class="chevron" aria-hidden="true">›</li>
+          <li class="station station--meta">
+            <span class="station__id">meta</span>
+            <img class="station__img" src="assets/prop-finish.webp" width="760" height="599" loading="lazy" alt="Arco de meta con banderines" />
+            <h3 class="station__name">Meta</h3>
+            <p class="station__note">para el reloj</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ====================== p4 · El obstáculo ====================== -->
+    <section id="p4-obstaculo" class="band">
+      <div class="wrap">
+        <div class="obstacle__grid">
+          <div data-reveal>
+            <p class="eyebrow">p4 · el obstáculo</p>
+            <h2 class="h2">Te empuja. Y te puede tirar.</h2>
+            <p class="lead">En mitad del circuito hay un obstáculo en movimiento que no perdona. Al contacto te empuja con un impulso de derribo y puede sacarte de la plataforma. Si caes, vuelves al punto de salida del intento en pocos segundos, sin recargar la página. Pulsas R y empiezas de nuevo. El reloj sigue, claro.</p>
+            <p class="mono-strip" style="margin-top:20px">
+              <span><b>respawn</b> ≤ 3 s</span><span class="sep">·</span>
+              <span><b>R</b> reinicia el intento</span>
+            </p>
+          </div>
+          <div class="obstacle__scene" data-reveal data-reveal-delay="1">
+            <div class="pendulum-pivot anim-swing">
+              <img src="assets/prop-pendulum.webp" width="760" height="407" loading="lazy" alt="Obstáculo de péndulo rojo y blanco" />
+            </div>
+            <img class="obstacle__cannon" src="assets/prop-cannon.webp" width="663" height="760" loading="lazy" alt="" />
+            <img class="obstacle__gag" src="assets/mascot-gag.webp" width="628" height="584" loading="lazy" alt="La cápsula con los ojos en aspa tras recibir un golpe" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================== p5 · Controles ====================== -->
+    <section id="p5-controles" class="band">
+      <div class="wrap">
+        <p class="eyebrow" data-reveal>p5 · controles</p>
+        <h2 class="h2" data-reveal>Cuatro cosas que aprender.</h2>
+        <p class="lead" data-reveal>Mover con WASD o las flechas. Saltar con Espacio. Orbitar la cámara con el ratón. Reiniciar el intento con R, sin recargar. Eso es todo. La ficha de abajo es la lista exacta, sin adornos.</p>
+
+        <div class="controls__grid">
+          <ul class="keys" data-reveal>
+            <li class="key">
+              <div class="key__keys"><span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span></div>
+              <p class="key__what">Mover</p>
+              <p class="key__note">o flechas · relativo a la cámara</p>
+            </li>
+            <li class="key">
+              <div class="key__keys"><span class="kbd">Espacio</span></div>
+              <p class="key__what">Saltar</p>
+              <p class="key__note">solo apoyado · sin doble salto</p>
+            </li>
+            <li class="key">
+              <div class="key__keys"><span class="kbd">Ratón</span></div>
+              <p class="key__what">Cámara</p>
+              <p class="key__note">órbita en tercera persona</p>
+            </li>
+            <li class="key">
+              <div class="key__keys"><span class="kbd">R</span></div>
+              <p class="key__what">Reiniciar</p>
+              <p class="key__note">vuelve a la salida · sin recargar</p>
+            </li>
+          </ul>
+          <div class="controls__blob" data-reveal data-reveal-delay="1">
+            <img src="assets/blob-pink.webp" width="705" height="750" loading="lazy" alt="" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================== meta · Cierre ====================== -->
+    <section id="meta-cierre" class="band">
+      <div class="wrap">
+        <div class="closing__grid">
+          <div class="closing__scene" data-reveal>
+            <img class="closing__arch" src="assets/prop-finish.webp" width="760" height="599" loading="lazy" alt="Arco de meta dorado con banderines" />
+            <img class="closing__win" src="assets/mascot-win.webp" width="610" height="690" loading="lazy" alt="La cápsula celebrando al cruzar la meta" />
+          </div>
+          <div class="closing__copy" data-reveal data-reveal-delay="1">
+            <p class="eyebrow eyebrow--meta">meta · cierre</p>
+            <h2 class="h2">Llega a la meta y bate tu tiempo.</h2>
+            <p class="seal"><span class="lbl">TU TIEMPO</span> <span class="time">--:--.---</span></p>
+            <p class="lead">El circuito termina en un arco dorado. Crúzalo y el cronómetro marca tu tiempo. Es un prototipo: pocas piezas y todavía pronto, pero ya se juega en el navegador. Dale unas vueltas, mejora tu marca y, si te va el detalle, el desarrollo es abierto.</p>
+            <div class="hero__actions">
+              <a class="btn btn--gold btn--lg" href="play/">Juega ahora</a>
+              <a class="btn btn--ghost btn--lg" href="https://github.com/dobbygl/topadero" target="_blank" rel="noopener">Sigue el código</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ====================== Footer ====================== -->
+  <footer class="footer">
+    <div class="footer__wrap">
+      <img src="assets/logo.webp" alt="Topadero" width="600" height="156" loading="lazy" />
+      <div class="footer__stack">
+        <span>TypeScript</span><span>·</span><span>Vite</span><span>·</span><span>Three.js</span><span>·</span><span>Rapier (WASM)</span>
+      </div>
+      <span>sim headless / render como vista pura · hecho con Spec Kit · un proyecto de <a href="https://github.com/dobbygl" target="_blank" rel="noopener">dobbygl</a></span>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>

@@ -3,16 +3,18 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 <!-- SPECKIT START -->
-Active feature: 001-obstacle-platformer (Topadero — prototipo de circuito de obstáculos).
+Active feature: 002-obstacle-variety-and-art (Topadero — variedad de obstáculos + vestido gráfico).
 Stack: TypeScript + Vite + Three.js + @dimforge/rapier3d-compat (físicas WASM).
 Arquitectura: núcleo de simulación headless (src/sim/) con paso de tiempo fijo
 (acumulador) desacoplado del render; Three.js, HUD y cámara son vistas puras;
-todo el ajuste centralizado en src/config.ts. Puerta automática no negociable:
-test de determinismo / independencia de FPS (Principio II de la constitución).
+todo el ajuste centralizado en src/config.ts. El arte decorativo (mallas low-poly +
+texturas, excepción v1.1.0) vive solo en src/render, alineado a colliders primitivos,
+nunca como geometría de colisión. Puerta automática no negociable: test de
+determinismo / independencia de FPS (Principio II de la constitución).
 
 For technologies, project structure, shell commands and other context, read the
-current plan: specs/001-obstacle-platformer/plan.md
-(spec: specs/001-obstacle-platformer/spec.md ·
+current plan: specs/002-obstacle-variety-and-art/plan.md
+(spec: specs/002-obstacle-variety-and-art/spec.md ·
 constitución: .specify/memory/constitution.md)
 <!-- SPECKIT END -->
 
@@ -53,16 +55,21 @@ La frontera que organiza todo separa la **simulación** del **render/E-S**:
 - `src/config.ts` es el **único** lugar de los parámetros de ajuste (velocidad, salto,
   umbral de caída, cámara…). No disperses números mágicos por el código (Principio V).
 
-## Reglas no negociables (constitución v1.0.0)
+## Reglas no negociables (constitución v1.2.0)
 
 - **Determinismo / independencia de FPS (Principio II, NO NEGOCIABLE).** El mismo input debe
   producir la misma trayectoria a 30 o 144 FPS. Los **inputs de flanco** (salto), el empuje
   del obstáculo y las comprobaciones de meta/respawn se consumen **dentro del paso fijo**, no
   por fotograma; consumirlos por fotograma es el bug clásico que caza el test de determinismo.
   Si ese test falla, ninguna historia se considera terminada.
-- **Alcance (Principio III).** Solo primitivas (cápsulas, cajas, cilindros); sin modelos,
-  audio, menús, red ni persistencia. Salirse del alcance exige enmendar antes spec y
-  constitución.
+- **Alcance (Principio III).** La geometría de simulación y **colisión** usa solo primitivas
+  (cápsulas, cajas, cilindros); sin audio, menús, red ni persistencia. Salirse del alcance
+  exige enmendar antes spec y constitución. **Excepción acotada (v1.1.0 + v1.2.0):** se permite
+  arte decorativo (mallas low-poly + texturas) y **animación esqueletal del personaje** en
+  `src/render` como vista pura, alineado a los colliders y **nunca** como geometría de colisión;
+  `src/sim/` no carga assets. La animación la conduce el **tiempo de render** (`AnimationMixer`),
+  no el paso fijo: es cosmética y no altera la posición (la determina el KCC) ni el determinismo.
+  La colisión por mallas (collmesh) y el audio siguen fuera de alcance.
 - **Rebanadas verticales (Principio IV).** Construir en orden P1 → P2 → P3; cada historia se
   valida (prueba de juego manual del `quickstart.md`) antes de empezar la siguiente.
 - **Rapier.** `@dimforge/rapier3d-compat` requiere `await RAPIER.init()` una vez al arrancar

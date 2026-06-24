@@ -46,8 +46,17 @@ export function createPlayer(world: RAPIER.World, config: Config, spawn: Vec3): 
   }
 }
 
-/** Avanza el jugador un paso fijo. Muta el estado del jugador y la pose del cuerpo. */
-export function stepPlayer(player: Player, input: StepInput, config: Config): void {
+/**
+ * Avanza el jugador un paso fijo. Muta el estado del jugador y la pose del cuerpo.
+ * `carryDelta` es el desplazamiento horizontal (ya en metros) que aporta una plataforma
+ * portante bajo los pies (R-carry); lo calcula la simulación dentro del paso fijo.
+ */
+export function stepPlayer(
+  player: Player,
+  input: StepInput,
+  config: Config,
+  carryDelta: Vec3 = { x: 0, y: 0, z: 0 },
+): void {
   const dt = config.FIXED_DT
 
   // --- Movimiento horizontal relativo al yaw crudo de la cámara (research R4) ---
@@ -83,11 +92,12 @@ export function stepPlayer(player: Player, input: StepInput, config: Config): vo
     player.controller.enableSnapToGround(config.snapToGroundDistance)
   }
 
-  // --- Desplazamiento deseado = (input + empuje) horizontal + vertical ---
+  // --- Desplazamiento deseado = (input + empuje) horizontal + vertical + transporte portante ---
+  // El carryDelta NO se multiplica por dt: ya es un desplazamiento en metros (pose(t+dt)-pose(t)).
   const desired = {
-    x: (moveX + player.knockbackX) * dt,
+    x: (moveX + player.knockbackX) * dt + carryDelta.x,
     y: player.verticalVelocity * dt,
-    z: (moveZ + player.knockbackZ) * dt,
+    z: (moveZ + player.knockbackZ) * dt + carryDelta.z,
   }
 
   // Move-and-slide del KCC: barrido contra la geometría (no atravesar / deslizar).

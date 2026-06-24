@@ -1,29 +1,37 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: plantilla sin versionar -> 1.0.0
-Ratification: 2026-06-24 (primera ratificación)
-Bump rationale: Primera materialización de la plantilla en una constitución concreta (MAJOR / establecimiento inicial).
+Version change: 1.1.0 -> 1.2.0
+Ratification: 2026-06-24 (sin cambios)
+Amendment date: 2026-06-24
+Bump rationale: MINOR. v1.1.0 permitió arte decorativo (mallas/texturas) en la capa de render.
+v1.2.0 amplía esa excepción para permitir además ANIMACIÓN ESQUELETAL del personaje, también
+SOLO en la capa de render: la reproducción de clips la conduce el tiempo de RENDER (no el paso
+fijo) y NO afecta a la simulación (el collider/KCC siguen determinando la posición). Sigue
+siendo retrocompatible (solo añade permiso con guardarraíles) y deja intactos los invariantes
+de corrección (Principio II / determinismo, frontera headless, colisión sobre primitivas, config.ts).
 
-Principios definidos:
-  I.   La sensación de juego manda
-  II.  Física determinista e independiente de la tasa de refresco (NO NEGOCIABLE)
-  III. Disciplina de alcance del prototipo (YAGNI)
-  IV.  Rebanadas verticales jugables
-  V.   Comportamiento sobre cifras: simplicidad y ajuste fácil
+Principios modificados:
+  III. Disciplina de alcance del prototipo (YAGNI) — la "Excepción acotada" de la capa de render
+       (v1.1.0: mallas/texturas decorativas) se amplía en v1.2.0 para incluir ANIMACIÓN ESQUELETAL
+       del personaje conducida por el render (cosmética, no afecta al paso fijo). La colisión basada
+       en mallas (collmesh) y el audio siguen fuera de alcance.
 
-Secciones añadidas:
-  - Restricciones técnicas y de plataforma (Sección 2)
-  - Flujo de desarrollo y puertas de calidad (Sección 3)
+Secciones modificadas:
+  - Restricciones técnicas y de plataforma — "Construcción de escena" ahora distingue la
+    geometría de simulación/colisión (solo primitivas) de la capa de render (mallas y
+    texturas decorativas permitidas).
 
-Secciones eliminadas: ninguna (se rellenaron los marcadores de la plantilla).
+Secciones añadidas/eliminadas: ninguna.
 
-Estado de plantillas dependientes:
-  ✅ .specify/templates/plan-template.md  (Constitution Check genérico que apunta a este archivo; alineado, sin cambios)
-  ✅ .specify/templates/spec-template.md  (user stories priorizadas e independientemente testables; alineado con Principio IV, sin cambios)
-  ✅ .specify/templates/tasks-template.md (tests OPCIONALES; coherente con Principios II y V, sin cambios)
-  ➖ .specify/templates/commands/*.md      (no existe en el repositorio)
-  ➖ README.md / docs/quickstart.md        (no existen en el repositorio)
+Estado de plantillas y documentos dependientes:
+  ✅ .specify/templates/plan-template.md  (Constitution Check genérico que apunta a este archivo; sin cambios)
+  ✅ .specify/templates/spec-template.md  (genérica; sin cambios)
+  ✅ .specify/templates/tasks-template.md (sin referencias de alcance que tocar)
+  ✅ CLAUDE.md (raíz) — actualizada la sección "Reglas no negociables" (v1.0.0 -> v1.1.0 y carve-out de arte decorativo)
+  ✅ README.md — actualizado al cerrar la Feature 002 (distingue colisión sobre primitivas de
+    la capa de render con arte decorativo + animación; documenta obstáculos, vestido 2D,
+    mallas low-poly y mascot animado).
 
 Follow-up TODOs: ninguno.
 -->
@@ -75,17 +83,46 @@ en silencio.
 
 ### III. Disciplina de alcance del prototipo (YAGNI)
 
-El trabajo DEBE respetar el alcance declarado en la spec acordada. Para este MVP, el
-*Out of Scope* es vinculante: NADA de multijugador o red, modelos 3D o animaciones, audio,
-menús, progresión o desbloqueos, ni varios niveles (es un único circuito corto). La escena
-se construye ÚNICAMENTE con primitivas (cápsulas, cajas, cilindros) y el personaje usa un
-collider cápsula con un controlador de personaje cinemático.
+El trabajo DEBE respetar el alcance declarado en la spec acordada. Para este prototipo, el
+*Out of Scope* sigue siendo vinculante: NADA de multijugador o red, audio, menús, progresión
+o desbloqueos, ni varios niveles independientes. La GEOMETRÍA DE SIMULACIÓN Y COLISIÓN se
+construye ÚNICAMENTE con primitivas (cápsulas, cajas, cilindros) y el personaje usa un
+collider cápsula con un controlador de personaje cinemático. La colisión basada en mallas
+(collmesh) sigue fuera de alcance.
+
+**Excepción acotada (enmienda v1.1.0): arte decorativo en la capa de render.** Se PERMITE
+vestir el prototipo con mallas 3D low-poly y texturas/imágenes 2D (skybox/fondo, materiales,
+señalización, props decorativos y, opcionalmente, una malla de personaje), siempre que se
+respeten estos guardarraíles NO NEGOCIABLES:
+
+- El arte vive EXCLUSIVAMENTE en la capa de render (`src/render`), como vista pura. La
+  simulación sigue headless: `src/sim/` NO importa la capa de render ni carga assets.
+- La colisión se resuelve SIEMPRE contra el collider primitivo. Las mallas son decoración
+  alineada al collider e interpolada para el render, NUNCA geometría de colisión: cada
+  obstáculo mantiene su collider primitivo y su malla visual por separado.
+- La carga de assets NO bloquea ni introduce no-determinismo en el paso fijo; ocurre fuera de
+  la simulación. El Principio II y su verificación se mantienen intactos (sin cambios de
+  tolerancia).
+- Los valores de ajuste asociados siguen centralizados en `config.ts` (Principio V).
+- **Animación del personaje (v1.2.0)**: se permite reproducir clips de animación esqueletal
+  del personaje SOLO en la capa de render, conducidos por el TIEMPO DE RENDER (`AnimationMixer`
+  con el delta de fotograma), NUNCA por el paso fijo. La animación es cosmética: NO altera la
+  posición ni el rumbo del jugador (los siguen determinando el collider y el KCC) ni la
+  verificación de determinismo, que se mantiene en verde sin cambios de tolerancia.
+
+El audio y cualquier otra cosa de la lista *Out of Scope* anterior NO entran con esta excepción;
+requieren enmienda aparte. La malla del personaje sigue la pose interpolada de la simulación
+(posición y rumbo); la animación esqueletal es una capa cosmética encima, conducida por el render.
 
 Cualquier trabajo fuera de ese alcance DEBE bloquearse hasta enmendar primero la spec y, si
 toca un principio, esta constitución. No se añade infraestructura "por si acaso".
 
-**Razón**: la disciplina de alcance es lo que mantiene el prototipo barato y centrado en la
-hipótesis; cada extra no pedido retrasa la respuesta a la única pregunta que importa.
+**Razón**: la disciplina de alcance mantiene el prototipo barato y centrado en la hipótesis.
+La excepción de arte decorativo responde a una necesidad real de presentación (Feature 002)
+sin tocar la corrección: separar "lo que se ve" de "lo que colisiona y simula" deja intactos
+el determinismo y la frontera headless, que son los principios que de verdad protegen la
+hipótesis. Cada extra no pedido fuera de esa frontera sigue retrasando la única pregunta que
+importa.
 
 ### IV. Rebanadas verticales jugables
 
@@ -119,11 +156,15 @@ y mantener el código simple es lo que hace rápida esa iteración.
 
 - **Plataforma**: navegador de escritorio, un solo jugador, en local. Sin backend, sin red y
   sin persistencia más allá de la sesión en curso.
-- **Construcción de escena**: solo primitivas (cápsulas, cajas, cilindros); sin modelos 3D ni
-  audio. Personaje con collider cápsula y controlador de personaje cinemático.
+- **Construcción de escena**: la geometría de simulación y colisión usa solo primitivas
+  (cápsulas, cajas, cilindros); sin audio. Personaje con collider cápsula y controlador de
+  personaje cinemático. La capa de render PUEDE vestir la escena con mallas low-poly y
+  texturas decorativas (enmienda v1.1.0, Principio III): son vista pura alineada a los
+  colliders, nunca geometría de colisión.
 - **Físicas**: paso de tiempo fijo y desacoplado del render (ver Principio II).
 - **Rendimiento**: objetivo >= 60 FPS en un navegador de escritorio típico, sin caer por
-  debajo de un nivel jugable (SC-008).
+  debajo de un nivel jugable (SC-008). El arte decorativo es low-poly y de peso acotado a
+  propósito; su carga no debe degradar este objetivo ni el paso fijo.
 - **Recuperación**: tras caer por debajo del umbral, el jugador recupera el control en una
   posición jugable en pocos segundos (objetivo <= 3 s, SC-005), sin recargar la página.
 - **Stack concreto**: el motor de render y la biblioteca de físicas se eligen en el plan
@@ -142,6 +183,10 @@ y mantener el código simple es lo que hace rápida esa iteración.
   donde compensen; no se exigen por cada funcionalidad.
 - **Estabilidad de colisiones**: antes de dar por terminada una historia con circuito, se
   DEBE comprobar la ausencia de tunneling y el deslizamiento estable.
+- **Frontera render/simulación**: cuando una historia añada arte decorativo, se DEBE
+  comprobar que `src/sim/` no importa la capa de render ni carga assets, y que las mallas
+  visuales siguen la pose interpolada alineadas a sus colliders primitivos sin
+  desincronización perceptible.
 - **Cadencia**: cada tarea se valida en su checkpoint antes de avanzar; se hace commit tras
   cada grupo lógico de cambios.
 
@@ -162,4 +207,4 @@ Esta constitución prevalece sobre las prácticas ad hoc durante el desarrollo d
 - **Cambios de alcance**: cualquier cosa listada en *Out of Scope* requiere enmendar primero
   la spec (y esta constitución si toca un principio) antes de implementarse.
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24
+**Version**: 1.2.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24

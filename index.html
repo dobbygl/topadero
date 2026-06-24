@@ -5,35 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Topadero</title>
     <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: #0e0f12; }
+      /* Identidad visual de ./marketing (paleta cartoon/pop). Las fuentes de marca
+         (Fraunces / Hanken Grotesk / Spline Sans Mono) NO están empaquetadas: se usan
+         fuentes del sistema a propósito (no asumir que existen). Decisión documentada (T027). */
+      :root {
+        --sky: #7ec8f3; --orange: #ff7a1a; --teal: #2fd4c4;
+        --pink: #ff5fa2; --gold: #d4af37; --ink: #14233b; --paper: #ffffff;
+      }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: var(--sky); }
       #app { position: fixed; inset: 0; }
       #app canvas { display: block; }
       #hud {
         position: fixed; inset: 0; pointer-events: none;
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #eef;
+        font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--ink);
       }
       #hud .timer {
         position: absolute; top: 14px; left: 16px;
-        font-size: 28px; font-variant-numeric: tabular-nums;
-        text-shadow: 0 1px 3px rgba(0,0,0,.7);
+        font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums;
+        color: var(--ink); background: var(--paper);
+        padding: 6px 14px; border-radius: 999px;
+        border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink);
       }
       #hud .hint {
         position: absolute; bottom: 14px; left: 16px;
-        font-size: 13px; opacity: .7;
+        font-size: 13px; font-weight: 700; color: var(--ink);
+        background: var(--paper); padding: 6px 14px; border-radius: 999px;
+        border: 3px solid var(--ink); box-shadow: 0 3px 0 var(--ink);
       }
       #hud .banner {
         position: absolute; inset: 0; display: none;
         align-items: center; justify-content: center; flex-direction: column;
-        background: rgba(8,9,12,.55); text-align: center;
+        background: rgba(20,35,59,.55); text-align: center; color: var(--paper);
       }
       #hud .banner.show { display: flex; }
-      #hud .banner h1 { margin: 0 0 8px; font-size: 44px; letter-spacing: 2px; }
+      #hud .banner h1 { margin: 0 0 8px; font-size: 48px; font-weight: 900; letter-spacing: 2px; color: var(--gold); }
       #hud .banner p { margin: 0; font-size: 20px; }
       #click-to-play {
         position: absolute; inset: 0; display: flex;
         align-items: center; justify-content: center;
-        font-family: ui-monospace, monospace; color: #cce; font-size: 18px;
-        background: rgba(8,9,12,.4); cursor: pointer;
+        font-family: system-ui, sans-serif; color: var(--paper); font-size: 18px; font-weight: 600;
+        background: rgba(20,35,59,.45); cursor: pointer; padding: 0 16px; text-align: center;
       }
       #click-to-play.hidden { display: none; }
     </style>
