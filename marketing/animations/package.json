@@ -1,0 +1,13 @@
+{
+  "name": "topadero-ad-renders",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Render Topadero ad animations to MP4 with headless Chrome + ffmpeg",
+  "type": "module",
+  "scripts": {
+    "render": "node render-videos.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.0.0"
+  }
+}

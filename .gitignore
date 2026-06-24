@@ -15,3 +15,12 @@ dist/
 
 # Logs y temporales
 *.log
+
+# Prompts de trabajo de Spec Kit (borradores, no versionar)
+*.prompt
+
+# Vídeos renderizados de los anuncios (regenerables con marketing/animations/render-videos.mjs)
+marketing/animations/renders/
+
+# Zips de assets para subir a claude.ai/design (redundantes: los PNG ya están versionados)
+marketing/*.zip
