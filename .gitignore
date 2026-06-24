@@ -1,0 +1,13 @@
+# Índice local de CodeGraph (regenerable; no versionar)
+.codegraph/
+
+# Dependencias y artefactos de build (los crea /speckit-implement)
+node_modules/
+dist/
+
+# Entornos virtuales de Python (p. ej. rembg para preparar art/iconos)
+.venv/
+.venv-*/
+
+# Logs y temporales
+*.log
