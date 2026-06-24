@@ -1,0 +1,9 @@
+# Índice local de CodeGraph (regenerable; no versionar)
+.codegraph/
+
+# Dependencias y artefactos de build (los crea /speckit-implement)
+node_modules/
+dist/
+
+# Logs y temporales
+*.log
