@@ -7,8 +7,15 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import type { CircuitDefinition } from '../circuit'
 
-/** Malla del personaje (US3). No es obstáculo, así que su ruta vive aquí, no en circuit.ts. */
+/** Malla ESTÁTICA del personaje (reserva). No es obstáculo: su ruta vive aquí, no en circuit.ts. */
 export const MASCOT_MESH_URL = 'assets/mascot.glb'
+
+/** Personaje RIGGEADO + animado (v1.2.0). Primario; si falla, cae a MASCOT_MESH_URL y luego cápsula. */
+export const PLAYER_RIG_URL = 'assets/player-rigged.glb'
+
+/** Props decorativos del cielo (key art); si no cargan, buildDecor los omite con gracia. */
+export const BALLOON_MESH_URL = 'assets/prop-balloon.glb'
+export const PINWHEEL_MESH_URL = 'assets/prop-pinwheel.glb'
 
 export interface AssetCatalog {
   textures: Map<string, THREE.Texture>
@@ -17,6 +24,9 @@ export interface AssetCatalog {
   skybox?: THREE.Texture
   /** Estado de carga por URL: true si cargó, false si falló → reserva. */
   loaded: Map<string, boolean>
+  /** Personaje riggeado (instancia ÚNICA, no se clona) + sus clips de animación (v1.2.0). */
+  playerScene?: THREE.Object3D
+  playerClips?: THREE.AnimationClip[]
 }
 
 function loadTexture(loader: THREE.TextureLoader, url: string, catalog: AssetCatalog): Promise<void> {
@@ -56,7 +66,28 @@ function loadMesh(loader: GLTFLoader, url: string, catalog: AssetCatalog): Promi
   })
 }
 
-/** Carga (antes de jugar) texturas/skybox + mallas GLB referenciadas. Siempre resuelve. */
+/** El personaje riggeado: instancia ÚNICA con su esqueleto + clips (no se clona; clone() no
+ *  reata el skeleton de un SkinnedMesh). Se guarda scene + animations por separado. */
+function loadPlayerRig(loader: GLTFLoader, catalog: AssetCatalog): Promise<void> {
+  return new Promise((resolve) => {
+    loader.load(
+      PLAYER_RIG_URL,
+      (gltf) => {
+        catalog.playerScene = gltf.scene
+        catalog.playerClips = gltf.animations
+        catalog.loaded.set(PLAYER_RIG_URL, true)
+        resolve()
+      },
+      undefined,
+      () => {
+        catalog.loaded.set(PLAYER_RIG_URL, false) // → reserva al mascot estático / cápsula
+        resolve()
+      },
+    )
+  })
+}
+
+/** Carga (antes de jugar) texturas/skybox + mallas GLB + el personaje riggeado. Siempre resuelve. */
 export async function loadAssets(circuit: CircuitDefinition): Promise<AssetCatalog> {
   const catalog: AssetCatalog = { textures: new Map(), meshes: new Map(), loaded: new Map() }
   const texLoader = new THREE.TextureLoader()
@@ -69,12 +100,13 @@ export async function loadAssets(circuit: CircuitDefinition): Promise<AssetCatal
   for (const z of circuit.zones) if (z.signageUrl) texUrls.add(z.signageUrl)
   for (const s of circuit.statics) if (s.texture) texUrls.add(s.texture)
 
-  const meshUrls = new Set<string>([MASCOT_MESH_URL])
+  const meshUrls = new Set<string>([MASCOT_MESH_URL, BALLOON_MESH_URL, PINWHEEL_MESH_URL])
   for (const o of circuit.obstacles) if (o.meshUrl) meshUrls.add(o.meshUrl)
 
   await Promise.all([
     ...[...texUrls].map((u) => loadTexture(texLoader, u, catalog)),
     ...[...meshUrls].map((u) => loadMesh(gltfLoader, u, catalog)),
+    loadPlayerRig(gltfLoader, catalog),
   ])
 
   if (theme?.skyboxUrl && catalog.loaded.get(theme.skyboxUrl)) {

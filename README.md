@@ -28,11 +28,12 @@ Topadero es el prototipo (MVP) de un juego de plataformas de obstáculos que cor
 - **Control en tercera persona** con cámara orbital que sigue al personaje de forma suave, sin saltos bruscos.
 - **Físicas deterministas e independientes de la tasa de fotogramas**: el mismo input produce la misma trayectoria a 30 o a 144 FPS.
 - **Salto solo apoyado**: nada de doble salto ni salto en el aire.
-- **Circuito de primitivas** con plataformas, una rampa y al menos un obstáculo en movimiento que te empuja al contacto.
+- **Circuito con variedad de obstáculos**: plataformas, rampa y varios obstáculos móviles deterministas (vaivén, barra giratoria, péndulo, empujador) más una plataforma portante horizontal y un atajo arriesgado.
 - **Cronómetro por intento** y estado de victoria con el tiempo al cruzar la meta.
 - **Respawn al caer** en pocos segundos y **reinicio del intento** con una tecla, sin recargar la página.
+- **Vestido gráfico (Feature 002)**: cielo con nubes, plataformas *candy* redondeadas y glossy con flechas, señalización, props de cielo (globos, molinillos), portal FINISH dorado y un **personaje animado** (idle / andar / correr / saltar).
 
-Sin multijugador, sin modelos 3D, sin audio y sin menús: la escena se construye solo con cápsulas, cajas y cilindros.
+La **colisión y la simulación** usan solo primitivas (cápsulas, cajas, cilindros). La **capa de render** sí lleva arte decorativo (excepción de la constitución v1.1.0 + v1.2.0): mallas low-poly y texturas alineadas a los colliders, **nunca** como geometría de colisión, y animación esqueletal conducida por el tiempo de render que no afecta a la física. Siguen fuera de alcance: audio, multijugador y menús.
 
 ## Cómo se juega
 
@@ -103,6 +104,8 @@ El MVP se construyó con [Spec Kit](https://github.com/github/spec-kit), siguien
 - [x] **P2 — Circuito hasta la meta.** Plataformas, rampa, obstáculo móvil, cronómetro y victoria.
 - [x] **P3 — Caída y reinicio.** Respawn y reinicio del intento sin recargar.
 
+**Feature 002 — variedad de obstáculos + vestido gráfico** (constitución v1.2.0): implementada y *code-complete*, pendiente de prueba de juego manual. Añade 3 tipos nuevos de obstáculo determinista + plataformas portantes, identidad visual 2D, mallas low-poly y un personaje animado, **manteniendo el determinismo** (la puerta automática sigue en verde) y la **colisión sobre primitivas**. Documentos en [`specs/002-obstacle-variety-and-art/`](specs/002-obstacle-variety-and-art/).
+
 Cada push a `main` ejecuta en GitHub Actions:
 
 ```text
@@ -123,3 +126,4 @@ El build actual incluye Rapier WASM embebido y genera un chunk principal grande 
 | [Tareas](specs/001-obstacle-platformer/tasks.md) | Registro de implementación completado |
 | [Quickstart](specs/001-obstacle-platformer/quickstart.md) | Ejecución y checklist de regresión |
 | [Contratos](specs/001-obstacle-platformer/contracts/) | Fronteras actuales de simulación y controles |
+| [Feature 002](specs/002-obstacle-variety-and-art/) | Variedad de obstáculos + vestido gráfico: spec, plan, tareas y contratos |

@@ -1,20 +1,21 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.0 -> 1.1.0
+Version change: 1.1.0 -> 1.2.0
 Ratification: 2026-06-24 (sin cambios)
 Amendment date: 2026-06-24
-Bump rationale: MINOR. Se amplía el alcance permitido en la CAPA DE RENDER (se permite arte
-decorativo: mallas 3D low-poly y texturas/imágenes 2D) sin eliminar ni redefinir de forma
-incompatible ningún principio. El cambio es retrocompatible: todo el trabajo previo (solo
-primitivas) sigue siendo conforme; solo se añade permiso, con nuevos guardarraíles. Los
-invariantes de corrección (Principio II / determinismo, frontera headless de la simulación,
-colisión sobre primitivas y centralización en config.ts) quedan intactos.
+Bump rationale: MINOR. v1.1.0 permitió arte decorativo (mallas/texturas) en la capa de render.
+v1.2.0 amplía esa excepción para permitir además ANIMACIÓN ESQUELETAL del personaje, también
+SOLO en la capa de render: la reproducción de clips la conduce el tiempo de RENDER (no el paso
+fijo) y NO afecta a la simulación (el collider/KCC siguen determinando la posición). Sigue
+siendo retrocompatible (solo añade permiso con guardarraíles) y deja intactos los invariantes
+de corrección (Principio II / determinismo, frontera headless, colisión sobre primitivas, config.ts).
 
 Principios modificados:
-  III. Disciplina de alcance del prototipo (YAGNI) — añadida "Excepción acotada (v1.1.0):
-       arte decorativo en la capa de render" con guardarraíles NO NEGOCIABLES; la colisión
-       basada en mallas (collmesh) sigue fuera de alcance.
+  III. Disciplina de alcance del prototipo (YAGNI) — la "Excepción acotada" de la capa de render
+       (v1.1.0: mallas/texturas decorativas) se amplía en v1.2.0 para incluir ANIMACIÓN ESQUELETAL
+       del personaje conducida por el render (cosmética, no afecta al paso fijo). La colisión basada
+       en mallas (collmesh) y el audio siguen fuera de alcance.
 
 Secciones modificadas:
   - Restricciones técnicas y de plataforma — "Construcción de escena" ahora distingue la
@@ -28,11 +29,11 @@ Estado de plantillas y documentos dependientes:
   ✅ .specify/templates/spec-template.md  (genérica; sin cambios)
   ✅ .specify/templates/tasks-template.md (sin referencias de alcance que tocar)
   ✅ CLAUDE.md (raíz) — actualizada la sección "Reglas no negociables" (v1.0.0 -> v1.1.0 y carve-out de arte decorativo)
-  ⚠ README.md — describe el MVP (Feature 001) como "sin modelos 3D / solo primitivas". Es
-    fiel al estado ACTUAL del repo; actualizar cuando se implemente la Feature 002, no antes
-    (la enmienda cambia lo PERMITIDO, no lo ya construido).
+  ✅ README.md — actualizado al cerrar la Feature 002 (distingue colisión sobre primitivas de
+    la capa de render con arte decorativo + animación; documenta obstáculos, vestido 2D,
+    mallas low-poly y mascot animado).
 
-Follow-up TODOs: actualizar README.md al cerrar la Feature 002.
+Follow-up TODOs: ninguno.
 -->
 
 # Constitución de Topadero
@@ -103,11 +104,15 @@ respeten estos guardarraíles NO NEGOCIABLES:
   la simulación. El Principio II y su verificación se mantienen intactos (sin cambios de
   tolerancia).
 - Los valores de ajuste asociados siguen centralizados en `config.ts` (Principio V).
+- **Animación del personaje (v1.2.0)**: se permite reproducir clips de animación esqueletal
+  del personaje SOLO en la capa de render, conducidos por el TIEMPO DE RENDER (`AnimationMixer`
+  con el delta de fotograma), NUNCA por el paso fijo. La animación es cosmética: NO altera la
+  posición ni el rumbo del jugador (los siguen determinando el collider y el KCC) ni la
+  verificación de determinismo, que se mantiene en verde sin cambios de tolerancia.
 
-El audio, los sistemas de animación esqueletal/riggeada del personaje, y cualquier otra cosa
-de la lista *Out of Scope* anterior NO entran con esta excepción; requieren enmienda aparte.
-Una malla de personaje permitida sigue la pose interpolada de la simulación, no un sistema de
-animación.
+El audio y cualquier otra cosa de la lista *Out of Scope* anterior NO entran con esta excepción;
+requieren enmienda aparte. La malla del personaje sigue la pose interpolada de la simulación
+(posición y rumbo); la animación esqueletal es una capa cosmética encima, conducida por el render.
 
 Cualquier trabajo fuera de ese alcance DEBE bloquearse hasta enmendar primero la spec y, si
 toca un principio, esta constitución. No se añade infraestructura "por si acaso".
@@ -202,4 +207,4 @@ Esta constitución prevalece sobre las prácticas ad hoc durante el desarrollo d
 - **Cambios de alcance**: cualquier cosa listada en *Out of Scope* requiere enmendar primero
   la spec (y esta constitución si toca un principio) antes de implementarse.
 
-**Version**: 1.1.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24
+**Version**: 1.2.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24

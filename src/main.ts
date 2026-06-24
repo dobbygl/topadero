@@ -32,6 +32,8 @@ async function main(): Promise<void> {
     clickToPlay.classList.add('hidden')
     input.requestLock()
   })
+  // Modo captura (?shot): oculta el overlay para screenshots limpios del escenario.
+  if (new URLSearchParams(location.search).has('shot')) clickToPlay.classList.add('hidden')
 
   window.addEventListener('resize', () => {
     view.resize()
@@ -54,6 +56,7 @@ async function main(): Promise<void> {
       sim.getObstacleTransforms(),
       loop.alpha,
     )
+    view.updatePlayerAnimation(ps.isGrounded, dtRender)
     hud.update(sim.getRunState())
     view.render(camera.camera)
     requestAnimationFrame(frame)
@@ -61,4 +64,12 @@ async function main(): Promise<void> {
   requestAnimationFrame(frame)
 }
 
-void main()
+main().catch((e: unknown) => {
+  const el = document.getElementById('hud')
+  const err = e instanceof Error ? (e.stack ?? e.message) : String(e)
+  if (el) el.innerHTML =
+    '<pre style="color:#fff;background:#900;padding:12px;white-space:pre-wrap;font:12px monospace;position:fixed;inset:0;margin:0;overflow:auto;z-index:99">' +
+    err +
+    '</pre>'
+  console.error(e)
+})

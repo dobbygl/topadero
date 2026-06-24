@@ -102,13 +102,13 @@ export const circuit: CircuitDefinition = {
   // instancia (id/kind/base/eje). Colocación a afinar en playtest (Principio I/V).
   obstacles: [
     // Barra giratoria sobre P2 (barrido horizontal a la altura del cuerpo).
-    { id: 'bar', kind: 'rotateBar', base: { x: 0, y: 2.6, z: -22 }, color: BAR },
+    { id: 'bar', kind: 'rotateBar', base: { x: 0, y: 2.6, z: -22 }, color: BAR, meshUrl: 'assets/obstacle-rotatebar.glb' },
     // Vaivén senoidal sobre P3 (heredado de 001).
-    { id: 'osc', kind: 'oscillate', base: { x: 0, y: 3.0, z: -31 }, color: OBSTACLE },
+    { id: 'osc', kind: 'oscillate', base: { x: 0, y: 3.0, z: -31 }, color: OBSTACLE, meshUrl: 'assets/obstacle-oscillate.glb' },
     // Péndulo que cruza P4 (arco que baja al nivel de la plataforma).
     { id: 'pendulum', kind: 'pendulum', base: { x: 0, y: 6.0, z: -40 }, color: PENDULUM, meshUrl: 'assets/obstacle-pendulum.glb' },
     // Plataforma PORTANTE horizontal (eje Z): puente móvil entre P5 y P6.
-    { id: 'carry', kind: 'carry', base: { x: 0, y: 1.5, z: -50 }, color: CARRY, axis: 'z', halfExtents: { x: 2.5, y: 0.4, z: 2.5 } },
+    { id: 'carry', kind: 'carry', base: { x: 0, y: 1.5, z: -50 }, color: CARRY, axis: 'z', halfExtents: { x: 2.5, y: 0.4, z: 2.5 }, meshUrl: 'assets/obstacle-carry.glb' },
     // Empujador alternante en P6 (carrera en Z) — malla del cañón (key art).
     { id: 'pusher', kind: 'pusher', base: { x: 0, y: 3.0, z: -58 }, color: PUSHER, meshUrl: 'assets/obstacle-pusher.glb' },
   ],
@@ -137,14 +137,14 @@ export const circuit: CircuitDefinition = {
     { id: 'shortcut', kind: 'platform', center: { x: 6, y: 1.5, z: -53 }, halfExtents: { x: 0.8, y: 0.5, z: 11 }, color: RAMP },
   ],
   zones: [
-    { kind: 'start', center: { x: 0, y: 0.6, z: 0 }, halfExtents: { x: 4, y: 0.6, z: 4 }, color: START, signageUrl: 'assets/sign-start.png' },
+    { kind: 'start', center: { x: 0, y: 0.6, z: 0 }, halfExtents: { x: 4, y: 0.6, z: 4 }, color: START },
     { kind: 'finish', center: { x: 0, y: 2.6, z: -66 }, halfExtents: { x: 4, y: 0.8, z: 4 }, color: FINISH, signageUrl: 'assets/sign-finish.png' },
   ],
   // VISUAL-ONLY (US2): dirección de arte de ./marketing (cartoon/pop). Rutas bajo public/assets/.
   // Reserva: si una textura no carga, scene.ts usa el color de paleta por tipo.
   theme: {
     palette: { sky: 0x7ec8f3, platform: 0x2fd4c4, ramp: 0xff7a1a, wall: 0x14233b, ink: 0x14233b },
-    skyboxUrl: 'assets/skybox.png',
+    skyboxUrl: 'assets/sky.png',
     textures: { platform: 'assets/tex-platform.png', ramp: 'assets/tex-ramp.png', wall: 'assets/tex-wall.png' },
   },
 }

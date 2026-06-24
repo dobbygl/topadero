@@ -43,7 +43,7 @@ export const config = {
   knockbackThrowStrength: 16, // m/s de "tirón" (péndulo): impulso más fuerte que el empuje base
   knockbackMax: 18, // m/s tope del empuje (anti tunneling)
   knockbackDecay: 6, // 1/s de decaimiento de la velocidad de empuje
-  contactPrediction: 0.15, // margen de detección de contactCollider (>= despl. del obstáculo por paso)
+  contactPrediction: 0.2, // margen de detección (>= despl. por paso del obstáculo más rápido; 5 tipos, T038)
 
   // --- Obstáculos nuevos (002 · US1). Magnitudes por tipo (Principio V); afinar en playtest. ---
   rotateBar: {
@@ -67,6 +67,11 @@ export const config = {
     supportBandY: 0.35, // banda Y sobre la cara superior para el test de soporte (R-carry)
   },
 
+  // --- Animación del personaje (002 · v1.2.0, SOLO render; conducida por tiempo de render) ---
+  animIdleSpeed: 0.6, // m/s por debajo → clip Idle
+  animRunSpeed: 4.5, // m/s por encima → clip Run; entre idle y run → Walking
+  animFade: 0.18, // s de crossfade entre clips
+
   // --- Vestido gráfico 2D (002 · US2). Solo ajuste visual; las RUTAS de asset van en circuit.ts. ---
   textureRepeat: 3, // repeticiones (tiling) de las texturas de superficie
   signageHeight: 2.2, // m de alto de los carteles de salida/meta sobre su losa
@@ -74,6 +79,70 @@ export const config = {
 
   // --- Recuperación ---
   fallThreshold: -8, // y por debajo del cual se reaparece
+
+  // --- Look glossy candy (002 · key art). SOLO render (NeutralToneMapping + IBL). ---
+  toneMappingExposure: 1.0, // única clave de exposición
+  envIntensity: 1.0, // scene.environmentIntensity del IBL
+  // Luz (unidades físicas post-r155)
+  hemiSky: 0xbfe3ff,
+  hemiGround: 0xf2efe0,
+  hemiIntensity: 0.6,
+  dirColor: 0xfff4e0,
+  dirIntensity: 2.6,
+  dirPosition: { x: -14, y: 22, z: 10 },
+  dirTargetZ: -33,
+  fillIntensity: 0.35,
+  shadowMapSize: 2048,
+  shadowBias: -0.0004,
+  shadowNormalBias: 0.02,
+  // Paleta candy de plataformas (alternancia rosa/teal; salida verde la da la zona start)
+  candy: { platformA: 0xff5fa2, platformB: 0x2fd4c4, ramp: 0xff7a1a, wall: 0xffffff, start: 0x8bd936 },
+  // Materiales glossy (MeshPhysicalMaterial: clearcoat = laca de caramelo)
+  glossy: {
+    statics: { roughness: 0.25, metalness: 0.0, clearcoat: 0.9, clearcoatRoughness: 0.12, envMapIntensity: 0.8 },
+    obstacle: { roughness: 0.3, metalness: 0.0, clearcoat: 0.8, clearcoatRoughness: 0.15, envMapIntensity: 0.7 },
+    mascot: { roughness: 0.35, metalness: 0.0, clearcoat: 0.7, clearcoatRoughness: 0.2, envMapIntensity: 0.6 },
+  },
+  // Redondeo de plataformas (look caramelo)
+  platformRoundRadius: 0.35,
+  platformRoundSegments: 4,
+  platformRoundMaxFrac: 0.85,
+  // Decals (flecha chevron + lane de salida)
+  decalYOffset: 0.06,
+  decalChevronWidthFrac: 0.6,
+  decalChevronLengthFrac: 0.5,
+  decalChevronColor: 0xffffff,
+  laneStripeWidth: 0.8,
+  laneStripeColor: 0xffffff,
+  laneStripeOpacity: 0.95,
+  laneStripeYOffset: 0.04,
+  // Entorno (cielo + props decorativos en el cielo)
+  env: {
+    backgroundIntensity: 1.15,
+    fogColor: 0xaaf6fb,
+    fogNear: 30,
+    fogFar: 140,
+    balloonSize: { x: 4, y: 6, z: 4 },
+    pinwheelSize: { x: 2.5, y: 3.5, z: 1 },
+    balloons: [
+      { x: -15, y: 15, z: -6 },
+      { x: 16, y: 19, z: -24 },
+      { x: -20, y: 24, z: -40 },
+      { x: 19, y: 17, z: -56 },
+      { x: -4, y: 28, z: -88 },
+    ],
+    pinwheels: [
+      { x: -9, y: 4, z: -11 },
+      { x: 10, y: 5, z: -31 },
+      { x: -10, y: 5, z: -44 },
+      { x: 11, y: 6, z: -58 },
+    ],
+  },
+  // Portal FINISH dorado + props
+  finishPortal: { z: -66, span: 6, postRadius: 0.18, barThickness: 0.45, bannerHeight: 0.9, goldColor: 0xf5c542, goldMetalness: 0.6, goldRoughness: 0.3, goldEmissive: 0x3a2c00, goldEmissiveIntensity: 0.4 },
+  railing: { postRadius: 0.08, postHeight: 0.9, railRadius: 0.06, count: 5 },
+  cannonProp: { r: 1.0, h: 0.8, color: 0xff5fa2 },
+  armProp: { r: 0.22, color: 0xff5fa2 },
 
   // --- Test / determinismo ---
   FLOAT_EPSILON: 1e-6, // tolerancia de redondeo en el test de igualdad
