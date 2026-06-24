@@ -9,5 +9,9 @@ dist/
 .venv/
 .venv-*/
 
+# Variables de entorno / secretos (nunca versionar)
+.env
+.env.*
+
 # Logs y temporales
 *.log
