@@ -1,5 +1,5 @@
 // Definición PURA del circuito (datos, sin Three.js ni Rapier). La consumen:
-//   - sim/ para crear los colliders (estáticos + sensores),
+//   - sim/ para crear los colliders estáticos (las zonas son AABB de datos, no colliders),
 //   - render/scene.ts para construir las mallas (vía sim.getCircuitDefinition()).
 // Layout aproximado de research R9; las dimensiones se afinan en la prueba de juego.
 // Convención: -Z es "hacia delante"; el jugador aparece en P0 mirando a -Z.

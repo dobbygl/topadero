@@ -23,6 +23,9 @@ export const config = {
   autostepIncludeDynamic: false,
 
   // --- Cámara (capa de render; no afecta a la simulación) ---
+  cameraFov: 60, // grados
+  cameraNear: 0.1,
+  cameraFar: 300,
   cameraDistance: 9,
   cameraHeight: 4,
   cameraTargetOffsetY: 1.0, // mira un poco por encima de los pies

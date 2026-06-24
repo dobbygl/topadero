@@ -21,7 +21,6 @@ export class Simulation {
   private simTime = 0
 
   private prevPlayerPos: Vec3
-  private prevPlayerYaw: number
   private prevObstaclePos: Vec3
 
   private constructor(config: Config) {
@@ -57,7 +56,6 @@ export class Simulation {
     this.run = createRunState()
 
     this.prevPlayerPos = { ...circuit.spawn }
-    this.prevPlayerYaw = this.player.facingYaw
     this.prevObstaclePos = { ...base }
   }
 
@@ -98,7 +96,6 @@ export class Simulation {
         Math.abs(input.moveAxis.x) > 1e-4 || Math.abs(input.moveAxis.y) > 1e-4 || input.jump
       if (moving) {
         this.run.phase = 'running'
-        this.run.firstInputSeen = true
       }
     }
     if (this.run.phase === 'running') {
@@ -110,6 +107,9 @@ export class Simulation {
     // Caída por debajo del umbral → respawn en la salida (el crono sigue, Q5).
     if (p.y < this.config.fallThreshold) {
       respawnPlayer(this.player, this.circuit.spawn)
+      // Recapturar la pose previa tras el teletransporte para que la interpolación
+      // de render no dibuje una "estela" cruzando el nivel (igual que reset()).
+      this.capturePrev()
     }
 
     this.simTime = t + dt
@@ -158,7 +158,6 @@ export class Simulation {
   private capturePrev(): void {
     const p = this.player.body.translation()
     this.prevPlayerPos = { x: p.x, y: p.y, z: p.z }
-    this.prevPlayerYaw = this.player.facingYaw
     const o = this.obstacleBody.translation()
     this.prevObstaclePos = { x: o.x, y: o.y, z: o.z }
   }
@@ -180,7 +179,9 @@ export class Simulation {
     return [{ position: { x: o.x, y: o.y, z: o.z }, rotationY: 0 }]
   }
   getPreviousPlayerTransform(): Transform {
-    return { position: this.prevPlayerPos, rotationY: this.prevPlayerYaw }
+    // El yaw del jugador no se interpola (la cápsula es visualmente simétrica);
+    // se devuelve el actual para mantener el contrato de Transform.
+    return { position: this.prevPlayerPos, rotationY: this.player.facingYaw }
   }
   getPreviousObstacleTransforms(): Transform[] {
     return [{ position: this.prevObstaclePos, rotationY: 0 }]

@@ -62,8 +62,4 @@ export class Input {
       edges: this.edges,
     }
   }
-
-  clearPendingEdges(): void {
-    this.edges.length = 0
-  }
 }

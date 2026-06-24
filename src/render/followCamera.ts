@@ -13,7 +13,7 @@ export class FollowCamera {
   private initialized = false
 
   constructor(aspect: number) {
-    this.camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 300)
+    this.camera = new THREE.PerspectiveCamera(config.cameraFov, aspect, config.cameraNear, config.cameraFar)
   }
 
   resize(aspect: number): void {

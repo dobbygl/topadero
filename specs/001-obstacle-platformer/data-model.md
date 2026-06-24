@@ -68,10 +68,9 @@ Salida y meta (FR-008, FR-010).
 | Campo | Tipo | Notas |
 |---|---|---|
 | `phase` | `'idle' \| 'running' \| 'won'` | |
-| `elapsedSimTime` | number | Tiempo de simulación acumulado en `running`. SC-006 = duración de simulación (R6). |
-| `firstInputSeen` | bool | Arranca con el primer input de movimiento/salto (no cámara). |
+| `elapsedSimTime` | number | Tiempo de simulación acumulado en `running`. SC-006 = duración de simulación (R6). El arranque (idle→running) se decide por `phase`, sin flag aparte. |
 
-- **idle → running**: primer `moveAxis`/`jumpEdge` (Q2). **running → won**: entrar en meta (FR-010). **respawn**: caer bajo umbral → teletransporte a salida, `phase`/`elapsedSimTime` intactos (Q5/FR-011). **reinicio (cualquier fase)**: resetea jugador, obstáculo, `phase=idle`, `elapsedSimTime=0`, `firstInputSeen=false`, descarta flancos (FR-012).
+- **idle → running**: primer `moveAxis`/`jumpEdge` (Q2). **running → won**: entrar en meta (FR-010). **respawn**: caer bajo umbral → teletransporte a salida, `phase`/`elapsedSimTime` intactos (Q5/FR-011). **reinicio (cualquier fase)**: resetea jugador, obstáculo, `phase=idle`, `elapsedSimTime=0` (FR-012).
 
 ### FrameInput, InputEdge y StepInput
 Entrada del navegador y entrada ya resuelta para un paso fijo.

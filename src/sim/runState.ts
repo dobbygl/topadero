@@ -7,17 +7,15 @@ import type { RunPhase, RunStateView } from '../types'
 export interface RunState {
   phase: RunPhase
   elapsedSimTime: number
-  firstInputSeen: boolean
 }
 
 export function createRunState(): RunState {
-  return { phase: 'idle', elapsedSimTime: 0, firstInputSeen: false }
+  return { phase: 'idle', elapsedSimTime: 0 }
 }
 
 export function resetRunState(rs: RunState): void {
   rs.phase = 'idle'
   rs.elapsedSimTime = 0
-  rs.firstInputSeen = false
 }
 
 export function readRunState(rs: RunState): RunStateView {

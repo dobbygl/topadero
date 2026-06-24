@@ -46,12 +46,6 @@ export function createPlayer(world: RAPIER.World, config: Config, spawn: Vec3): 
   }
 }
 
-/** Añade una velocidad de empuje horizontal (se sumará al movimiento y decaerá). */
-export function addKnockback(player: Player, vx: number, vz: number): void {
-  player.knockbackX += vx
-  player.knockbackZ += vz
-}
-
 /** Avanza el jugador un paso fijo. Muta el estado del jugador y la pose del cuerpo. */
 export function stepPlayer(player: Player, input: StepInput, config: Config): void {
   const dt = config.FIXED_DT
@@ -96,12 +90,9 @@ export function stepPlayer(player: Player, input: StepInput, config: Config): vo
     z: (moveZ + player.knockbackZ) * dt,
   }
 
-  // Move-and-slide excluyendo sensores (zonas de salida/meta)
-  player.controller.computeColliderMovement(
-    player.collider,
-    desired,
-    RAPIER.QueryFilterFlags.EXCLUDE_SENSORS,
-  )
+  // Move-and-slide del KCC: barrido contra la geometría (no atravesar / deslizar).
+  // No se filtran sensores porque el mundo no tiene ninguno (las zonas son AABB de datos).
+  player.controller.computeColliderMovement(player.collider, desired)
   const corrected = player.controller.computedMovement()
   const pos = player.body.translation()
   player.body.setNextKinematicTranslation({
