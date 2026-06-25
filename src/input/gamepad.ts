@@ -16,7 +16,7 @@ export interface InputHooks {
 }
 
 /** Deadzone radial: por debajo de `dz` → 0; por encima se reescala [dz,1]→[0,1] (sin salto). */
-function applyDeadzone(x: number, y: number, dz: number): { x: number; y: number } {
+export function applyDeadzone(x: number, y: number, dz: number): { x: number; y: number } {
   const m = Math.hypot(x, y)
   if (m < dz || m < 1e-6) return { x: 0, y: 0 }
   const scaled = Math.min((m - dz) / (1 - dz), 1) / m
