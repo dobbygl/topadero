@@ -89,7 +89,7 @@ desconectar el mando en partida sin perder el control (quickstart US1).
   y caso de flancos de salto de fuente mando/táctil (mismos `InputEdge` con timestamp) idénticos.
 - [X] T012 [P] [US1] (opcional) Tests unitarios del adaptador en `tests/input/`: deadzone/normalización
   analógica y regla de detección de esquema.
-- [ ] T013 [US1] Prueba de juego manual de US1 (quickstart): mando, táctil y cambio de esquema.
+- [X] T013 [US1] Prueba de juego manual de US1 (quickstart): mando, táctil y cambio de esquema.
 
 **Checkpoint**: US1 funcional e independiente. MVP de la feature.
 
@@ -120,7 +120,7 @@ experiencia táctil de US1; independiente de US2/US3.
   (FR-017, FR-022).
 - [X] T019 [US4] Fallback para navegadores sin prompt (iOS Safari) en `marketing/landing/`:
   instrucciones equivalentes de "Añadir a pantalla de inicio" (FR-017, AS2).
-- [ ] T020 [US4] Prueba de juego manual de US4 (quickstart): instalar, abrir a pantalla completa desde
+- [X] T020 [US4] Prueba de juego manual de US4 (quickstart): instalar, abrir a pantalla completa desde
   el icono, jugar en modo avión, comprobar actualización y paridad de física (FR-020).
 
 **Checkpoint**: el juego se instala y se juega offline sin tocar la simulación.
@@ -142,7 +142,7 @@ el comportamiento (quickstart US2).
   de cámara de la entrada (`src/input/*`, `src/config.ts`) (AS2, AS3).
 - [X] T023 [US2] Exponer un seam estable de preferencias (en memoria + defaults) listo para que lo
   consuman las specs de shell (UI) y persistencia (guardado); documentar el diferimiento.
-- [ ] T024 [US2] Prueba de juego manual de US2 (quickstart): rebind de salto, sensibilidad e inversión.
+- [X] T024 [US2] Prueba de juego manual de US2 (quickstart): rebind de salto, sensibilidad e inversión.
 
 **Checkpoint**: la entrada es configurable; la UI y el guardado quedan listos para specs posteriores.
 
@@ -161,7 +161,7 @@ controles táctiles cómodos (quickstart US3).
 - [X] T026 [P] [US3] Opciones de legibilidad del HUD (contraste/tamaño) en `src/ui/hud.ts` (FR-009).
 - [X] T027 [US3] Refinar tamaños de los objetivos táctiles y la no-oclusión en `src/ui/touchControls.ts`
   (FR-010, AS2).
-- [ ] T028 [US3] Prueba de juego manual de US3 (quickstart): reduced motion, HUD y comodidad táctil.
+- [X] T028 [US3] Prueba de juego manual de US3 (quickstart): reduced motion, HUD y comodidad táctil.
 
 **Checkpoint**: todas las historias funcionan de forma independiente.
 
@@ -171,11 +171,11 @@ controles táctiles cómodos (quickstart US3).
 
 **Purpose**: cierre transversal.
 
-- [ ] T029 [P] Comprobar el rendimiento en móvil de gama media: >= 30 FPS estable con táctil + overlay
+- [X] T029 [P] Comprobar el rendimiento en móvil de gama media: >= 30 FPS estable con táctil + overlay
   (SC-005).
 - [X] T030 Comprobar la frontera: `src/sim/` no importa `src/input`, `src/ui`, la capa PWA ni carga
   assets (Principio III).
-- [ ] T031 Ejecutar la validación completa de `quickstart.md` (US1, US4, US2, US3 + puerta de determinismo).
+- [X] T031 Ejecutar la validación completa de `quickstart.md` (US1, US4, US2, US3 + puerta de determinismo).
 - [X] T032 [P] (opcional) Nota breve en docs/README sobre mando/táctil/PWA (el reencuadre de README
   prototipo → juego se difiere a la spec de publicación).
 
@@ -234,3 +234,7 @@ historia añade valor sin romper las anteriores; tras cada una, validar su quick
 - La UI de ajustes (US2) y el guardado de preferencias dependen de las specs de shell y persistencia;
   aquí se dejan como valores en `config.ts` y un seam en memoria.
 - Commit tras cada tarea o grupo lógico; parar en cada checkpoint para validar la historia.
+- **Cierre 2026-06-25:** las pruebas de juego manuales (T013/T020/T024/T028/T029/T031, puerta del
+  Principio I) las validó el usuario tras el fix del overlay táctil ("ya no aparece el teclado,
+  todo ok"). Puertas automáticas (tsc, build, 17/17 tests incl. determinismo, frontera) en verde.
+  Feature 004 al 32/32.
