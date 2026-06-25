@@ -75,13 +75,13 @@ desconectar el mando en partida sin perder el control (quickstart US1).
   por fotograma; stick izquierdo → `moveAxis` con deadzone radial (magnitud ≤ 1); stick derecho →
   delta de yaw/pitch; botón de salto → flancos `jump`/`jumpRelease` con timestamp = `now` del
   fotograma; manejo de conexión/desconexión (research R1, R3).
-- [ ] T008 [P] [US1] Adaptador táctil en `src/input/touch.ts`: Pointer Events con `pointerId`;
+- [X] T008 [P] [US1] Adaptador táctil en `src/input/touch.ts`: Pointer Events con `pointerId`;
   joystick virtual (mitad izquierda) → `moveAxis` proporcional; zona derecha → delta de cámara; botón
   de salto → flancos con `e.timeStamp`; multi-touch y captura del puntero del joystick (research R2).
-- [ ] T009 [US1] Overlay táctil en `src/ui/touchControls.ts`: joystick (izq), botón de salto
+- [X] T009 [US1] Overlay táctil en `src/ui/touchControls.ts`: joystick (izq), botón de salto
   (abajo-dcha) y zona de cámara (dcha) según el layout de `config.ts`; responsive a tamaño/orientación
   y sin ocultar el centro de la pantalla (FR-002, FR-010).
-- [ ] T010 [US1] Cablear adaptadores en el agregador y el esquema activo en `src/input/input.ts`,
+- [X] T010 [US1] Cablear adaptadores en el agregador y el esquema activo en `src/input/input.ts`,
   `src/input/scheme.ts` y `src/main.ts`: mostrar el overlay solo en táctil, cambio en caliente
   (incluida conexión/desconexión de mando) y soltar entradas "pegadas" al desconectar o perder foco.
 - [X] T011 [US1] EXTENDER la puerta de determinismo en `tests/determinism.test.ts` (OBLIGATORIO,
