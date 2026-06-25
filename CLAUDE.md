@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 <!-- SPECKIT START -->
-Active feature: 003-control-feel-pass (Topadero — pase de feel del control).
+Active feature: 004-input-accessibility (Topadero: entrada, accesibilidad y app instalable PWA).
 Stack: TypeScript + Vite + Three.js + @dimforge/rapier3d-compat (físicas WASM).
 Arquitectura: núcleo de simulación headless (src/sim/) con paso de tiempo fijo
 (acumulador) desacoplado del render; Three.js, HUD y cámara son vistas puras;
@@ -13,8 +13,8 @@ nunca como geometría de colisión. Puerta automática no negociable: test de
 determinismo / independencia de FPS (Principio II de la constitución).
 
 For technologies, project structure, shell commands and other context, read the
-current plan: specs/003-control-feel-pass/plan.md
-(spec: specs/003-control-feel-pass/spec.md ·
+current plan: specs/004-input-accessibility/plan.md
+(spec: specs/004-input-accessibility/spec.md ·
 constitución: .specify/memory/constitution.md)
 <!-- SPECKIT END -->
 

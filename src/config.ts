@@ -47,6 +47,23 @@ export const config = {
   mouseSensitivity: 0.0025, // rad por píxel de movimiento
   mouseDeltaClamp: 100, // px máximos por evento (evita saltos bruscos)
 
+  // --- Entrada: mando + táctil (004). Adaptadores en src/input; el FrameInput lo consume el
+  // paso fijo (los flancos se ventanean → deterministas, Principio II). La cámara es render. ---
+  gamepadDeadzone: 0.2, // deadzone radial de los sticks (0..1)
+  gamepadLookSpeed: 2.6, // rad/s del stick derecho (cámara; escalado por dt de render)
+  gamepadJumpButton: 0, // índice de botón de salto (A / cross)
+  gamepadRestartButton: 9, // índice de botón de reinicio (Start / Options)
+  invertCameraY: false, // US2: invertir el eje vertical de cámara (mando y táctil)
+  touchLookSensitivity: 0.005, // rad por píxel de arrastre en la zona de cámara (US1)
+  touchJoystickRadius: 60, // px; radio del joystick virtual a deflexión máxima
+  touchJumpButtonSize: 88, // px; lado del botón de salto en pantalla
+  touchControlMargin: 28, // px; margen de los controles táctiles al borde
+
+  // --- Accesibilidad (004 · US3; solo render/UI, no toca el paso fijo) ---
+  reducedMotion: false, // atenúa el movimiento/juice de cámara (semilla desde prefers-reduced-motion)
+  hudScale: 1.0,
+  hudHighContrast: false,
+
   // --- Obstáculo móvil ---
   obstacleAmplitude: 4.5, // m de vaivén (eje X)
   obstacleSpeed: 1.6, // rad/s de la fase senoidal

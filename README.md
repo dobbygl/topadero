@@ -33,6 +33,7 @@ Topadero es el prototipo (MVP) de un juego de plataformas de obstáculos que cor
 - **Cronómetro por intento** y estado de victoria con el tiempo al cruzar la meta.
 - **Respawn al caer** en pocos segundos y **reinicio del intento** con una tecla, sin recargar la página.
 - **Vestido gráfico (Feature 002)**: cielo con nubes, plataformas *candy* redondeadas y glossy con flechas, señalización, props de cielo (globos, molinillos), portal FINISH dorado y un **personaje animado** (idle / andar / correr / saltar).
+- **Entrada y accesibilidad (Feature 004)**: además de teclado y ratón, se juega con **mando** (sticks + botón de salto) y en **móvil con controles táctiles** (joystick virtual, botón de salto, arrastre de cámara), con cambio de esquema automático. Reasignación de controles, sensibilidad e inversión de cámara y opciones de accesibilidad (*reduced motion*, HUD legible). El juego es **instalable como app (PWA)** y se juega sin conexión. Toda la entrada se consume dentro del paso fijo: el determinismo no cambia.
 
 La **colisión y la simulación** usan solo primitivas (cápsulas, cajas, cilindros). La **capa de render** sí lleva arte decorativo (excepción de la constitución v1.1.0 + v1.2.0): mallas low-poly y texturas alineadas a los colliders, **nunca** como geometría de colisión, y animación esqueletal conducida por el tiempo de render que no afecta a la física. Siguen fuera de alcance: audio, multijugador y menús.
 

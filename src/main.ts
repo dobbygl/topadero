@@ -3,6 +3,7 @@
 // SEGUNDOS al bucle (research R2; FIXED_DT en segundos).
 
 import * as RAPIER from '@dimforge/rapier3d-compat'
+import { config } from './config'
 import { advance, createLoopState } from './core/gameLoop'
 import { quatFromYaw } from './types'
 import { FollowCamera } from './render/followCamera'
@@ -11,8 +12,10 @@ import { loadAssets } from './render/assets'
 import { Input } from './input/input'
 import { Hud } from './ui/hud'
 import { Simulation } from './sim/simulation'
+import { registerServiceWorker } from './pwa/install'
 
 async function main(): Promise<void> {
+  registerServiceWorker() // PWA (004 · US4): offline tras la primera carga; no toca el paso fijo.
   await RAPIER.init()
 
   const sim = Simulation.create()
@@ -23,6 +26,9 @@ async function main(): Promise<void> {
   view.resize()
 
   const camera = new FollowCamera(view.aspect)
+  // Accesibilidad (004 · US3): reduce el movimiento de cámara si la preferencia o el sistema lo pide.
+  camera.reducedMotion =
+    config.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const hud = new Hud(document.getElementById('hud') as HTMLElement)
   const input = new Input(view.renderer.domElement)
   const loop = createLoopState()
@@ -56,7 +62,7 @@ async function main(): Promise<void> {
     const dtRender = Math.min((nowMs - lastRenderMs) / 1000, 0.1)
     lastRenderMs = nowMs
 
-    advance(sim, loop, nowMs / 1000, input.getFrameInput())
+    advance(sim, loop, nowMs / 1000, input.getFrameInput(nowMs / 1000))
 
     const ps = sim.getPlayerState()
     camera.update(ps.position, input.yaw, input.pitch, dtRender)
@@ -78,7 +84,7 @@ async function main(): Promise<void> {
     )
     view.updatePlayerAnimation(ps.isGrounded, dtRender)
     view.setDebug(debug ? sim.getDebugRender() : null)
-    hud.update(sim.getRunState())
+    hud.update(sim.getRunState(), input.activeScheme)
     view.render(camera.camera)
     requestAnimationFrame(frame)
   }

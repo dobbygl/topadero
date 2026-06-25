@@ -1,66 +1,74 @@
-// Entrada del navegador: teclado (movimiento + flancos con timestamp) y ratón (pointer lock).
-// Posee el yaw/pitch crudos de la cámara (base del movimiento relativo, research R4).
-// Los timestamps de los flancos se pasan a SEGUNDOS (el bucle trabaja en segundos).
+// Agregador de entrada (004). Posee el yaw/pitch crudos de la cámara y produce un único
+// FrameInput, agnóstico de la fuente: teclado+ratón (keyboardMouse.ts), mando (gamepad.ts) y táctil
+// (touch.ts) lo rellenan; el esquema activo (scheme.ts) decide qué moveAxis se usa. Los flancos van
+// a un buffer compartido que el bucle consume por ventana de timestamp → deterministas (Principio
+// II). La sensibilidad/inversión de cámara se aplican aquí (US2). NO importa src/sim.
 
 import { config } from '../config'
 import type { FrameInput, InputEdge } from '../core/gameLoop'
+import { GamepadInput, type InputHooks } from './gamepad'
+import { TouchInput } from './touch'
+import { TouchControls } from '../ui/touchControls'
+import { KeyboardMouseInput } from './keyboardMouse'
+import { SchemeTracker, type Scheme } from './scheme'
+import { inputPrefs } from './preferences'
 
 export class Input {
   yaw = 0 // mirando a -Z (forward = (-sin yaw, 0, -cos yaw))
   pitch = 0.25
-  private keys = new Set<string>()
-  private edges: InputEdge[] = []
-  private locked = false
+  private readonly edges: InputEdge[] = []
+  private readonly scheme = new SchemeTracker()
+  private readonly km: KeyboardMouseInput
+  private readonly gamepad: GamepadInput
+  private readonly touch: TouchInput
+  private readonly touchControls: TouchControls
 
-  constructor(private readonly target: HTMLElement) {
-    window.addEventListener('keydown', this.onKeyDown)
-    window.addEventListener('keyup', this.onKeyUp)
-    document.addEventListener('pointerlockchange', this.onLockChange)
-    document.addEventListener('mousemove', this.onMouseMove)
+  constructor(target: HTMLElement) {
+    const hooks: InputHooks = {
+      pushEdge: (e) => this.edges.push(e),
+      applyLook: (dYaw, dPitch) => this.applyLook(dYaw, dPitch),
+      mark: (s) => this.scheme.mark(s),
+    }
+    this.km = new KeyboardMouseInput(target, hooks)
+    this.gamepad = new GamepadInput(config, hooks)
+    this.touchControls = new TouchControls()
+    this.touch = new TouchInput(hooks, this.touchControls)
     target.addEventListener('click', this.requestLock)
   }
 
+  /** Esquema de entrada en uso (para que las vistas, p. ej. el HUD, adapten sus pistas). */
+  get activeScheme(): Scheme {
+    return this.scheme.active
+  }
+
+  // Pointer lock solo fuera del esquema táctil (con el dedo no se usa).
   requestLock = (): void => {
-    if (!this.locked) void this.target.requestPointerLock()
+    if (this.scheme.active !== 'touch') this.km.lock()
   }
 
-  private onLockChange = (): void => {
-    this.locked = document.pointerLockElement === this.target
-  }
-
-  private onMouseMove = (e: MouseEvent): void => {
-    if (!this.locked) return
-    const clamp = config.mouseDeltaClamp
-    const dx = Math.max(-clamp, Math.min(clamp, e.movementX))
-    const dy = Math.max(-clamp, Math.min(clamp, e.movementY))
-    this.yaw -= dx * config.mouseSensitivity
+  /** Aplica un delta de cámara (ratón, stick o arrastre) con sensibilidad e inversión (US2). */
+  private applyLook(dYaw: number, dPitch: number): void {
+    const s = inputPrefs.cameraSensitivity
+    const sx = inputPrefs.invertCameraX ? -1 : 1
+    const sy = inputPrefs.invertCameraY ? -1 : 1
+    this.yaw -= dYaw * s * sx
     this.pitch = Math.max(
       config.cameraPitchMin,
-      Math.min(config.cameraPitchMax, this.pitch - dy * config.mouseSensitivity),
+      Math.min(config.cameraPitchMax, this.pitch - dPitch * s * sy),
     )
   }
 
-  private onKeyDown = (e: KeyboardEvent): void => {
-    if (e.repeat) return
-    this.keys.add(e.code)
-    if (e.code === 'Space') this.edges.push({ kind: 'jump', timestamp: e.timeStamp / 1000 })
-    else if (e.code === 'KeyR') this.edges.push({ kind: 'restart', timestamp: e.timeStamp / 1000 })
-  }
-
-  private onKeyUp = (e: KeyboardEvent): void => {
-    this.keys.delete(e.code)
-    // Flanco de SOLTADO del salto (US2): mismo tratamiento que el de pulsado; el corte del salto
-    // variable se ventanea al sim-step de su timestamp → independiente de los FPS.
-    if (e.code === 'Space') this.edges.push({ kind: 'jumpRelease', timestamp: e.timeStamp / 1000 })
-  }
-
-  getFrameInput(): FrameInput {
-    const fwd = this.keys.has('KeyW') || this.keys.has('ArrowUp')
-    const back = this.keys.has('KeyS') || this.keys.has('ArrowDown')
-    const left = this.keys.has('KeyA') || this.keys.has('ArrowLeft')
-    const right = this.keys.has('KeyD') || this.keys.has('ArrowRight')
+  getFrameInput(nowSec: number = performance.now() / 1000): FrameInput {
+    this.gamepad.poll(nowSec)
+    this.touchControls.setVisible(this.scheme.active === 'touch')
+    const moveAxis =
+      this.scheme.active === 'gamepad'
+        ? this.gamepad.getMoveAxis()
+        : this.scheme.active === 'touch'
+          ? this.touch.getMoveAxis()
+          : this.km.getMoveAxis()
     return {
-      moveAxis: { x: (right ? 1 : 0) - (left ? 1 : 0), y: (fwd ? 1 : 0) - (back ? 1 : 0) },
+      moveAxis,
       cameraYaw: this.yaw,
       edges: this.edges,
     }

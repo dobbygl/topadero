@@ -114,3 +114,66 @@
     });
   }
 })();
+
+/* ---- PWA (004 · US4): registro del SW + invitación a instalar el juego ----
+   El SW (scope raíz) da offline a landing y /play. La invitación usa beforeinstallprompt
+   cuando el navegador lo permite; en iOS Safari (sin ese evento) muestra instrucciones. Nunca
+   es bloqueante (FR-022) y no reaparece de forma molesta en la misma sesión. */
+(function () {
+  "use strict";
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
+
+  var standalone =
+    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+    window.navigator.standalone === true;
+  if (standalone) return; // ya instalado: no insistir
+  if (sessionStorage.getItem("tp-install-dismissed")) return;
+
+  var style = document.createElement("style");
+  style.textContent =
+    ".pwa-install{position:fixed;left:16px;right:16px;bottom:16px;z-index:9999;display:flex;gap:10px;" +
+    "align-items:center;justify-content:center;background:#14233b;color:#fff;border:3px solid #fff;" +
+    "border-radius:14px;padding:10px 12px;box-shadow:0 6px 0 rgba(0,0,0,.25);font:600 14px/1.3 system-ui,sans-serif;max-width:520px;margin:0 auto}" +
+    ".pwa-install__go{cursor:pointer;background:#ff5fa2;color:#fff;border:0;border-radius:999px;padding:9px 16px;font:inherit;font-weight:800}" +
+    ".pwa-install__x{cursor:pointer;background:transparent;color:#fff;border:0;font-size:22px;line-height:1;padding:0 6px}";
+  document.head.appendChild(style);
+
+  function dismiss(box) {
+    box.remove();
+    try { sessionStorage.setItem("tp-install-dismissed", "1"); } catch (e) {}
+  }
+  function banner(html) {
+    var box = document.createElement("div");
+    box.className = "pwa-install";
+    box.innerHTML = html + '<button class="pwa-install__x" aria-label="Descartar">×</button>';
+    document.body.appendChild(box);
+    box.querySelector(".pwa-install__x").addEventListener("click", function () { dismiss(box); });
+    return box;
+  }
+
+  var deferred = null;
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();
+    deferred = e;
+    var box = banner('<span>Instala Topadero como app</span><button class="pwa-install__go">Instalar</button>');
+    box.querySelector(".pwa-install__go").addEventListener("click", function () {
+      box.remove();
+      if (deferred) { deferred.prompt(); deferred = null; }
+    });
+  });
+  window.addEventListener("appinstalled", function () {
+    try { sessionStorage.setItem("tp-install-dismissed", "1"); } catch (e) {}
+  });
+
+  // iOS Safari no expone beforeinstallprompt → instrucciones equivalentes.
+  var ua = navigator.userAgent || "";
+  var isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var isSafari = /safari/i.test(ua) && !/crios|fxios|chrome|android/i.test(ua);
+  if (isIOS && isSafari) {
+    banner('<span>Instala el juego: pulsa <b>Compartir</b> y luego <b>Añadir a pantalla de inicio</b></span>');
+  }
+})();

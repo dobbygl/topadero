@@ -11,6 +11,8 @@ export class FollowCamera {
   private readonly pos = new THREE.Vector3()
   private readonly target = new THREE.Vector3()
   private initialized = false
+  /** US3: seguimiento rígido (atenúa el balanceo de cámara) + hook para el futuro juice/sacudida. */
+  reducedMotion = false
 
   constructor(aspect: number) {
     this.camera = new THREE.PerspectiveCamera(config.cameraFov, aspect, config.cameraNear, config.cameraFar)
@@ -36,7 +38,7 @@ export class FollowCamera {
       this.target.set(tx, ty, tz)
       this.initialized = true
     } else {
-      const a = 1 - Math.exp(-config.cameraSmoothingK * dtRender)
+      const a = this.reducedMotion ? 1 : 1 - Math.exp(-config.cameraSmoothingK * dtRender)
       this.pos.x += (desiredX - this.pos.x) * a
       this.pos.y += (desiredY - this.pos.y) * a
       this.pos.z += (desiredZ - this.pos.z) * a

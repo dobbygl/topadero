@@ -1,23 +1,63 @@
 // HUD por overlay DOM: cronómetro, banner de victoria y aviso de reinicio.
+// Accesibilidad (004 · US3): escala (hudScale) y alto contraste (hudHighContrast) desde config,
+// como capa de vista; no afectan a la simulación ni al determinismo.
+// La pista de controles se adapta al esquema de entrada activo (004 · US1).
 
+import { config } from '../config'
 import type { RunStateView } from '../types'
+import type { Scheme } from '../input/scheme'
+
+const HINTS: Record<Scheme, string> = {
+  keyboardMouse: 'WASD/flechas: mover · Espacio: saltar · R: reiniciar · ratón: cámara',
+  gamepad: 'Stick izq.: mover · A: saltar · stick der.: cámara · Start: reiniciar',
+  touch: 'Joystick: mover · botón SALTO · arrastra a la derecha: cámara',
+}
+
+let a11yStyleInjected = false
+function injectA11yStyle(): void {
+  if (a11yStyleInjected) return
+  a11yStyleInjected = true
+  const style = document.createElement('style')
+  // Se inyecta después del <style> de index.html → gana a igual especificidad (escala/contraste).
+  style.textContent = `
+    #hud .timer { font-size: calc(28px * var(--hud-scale, 1)); }
+    #hud .hint { font-size: calc(13px * var(--hud-scale, 1)); }
+    #hud.hud-contrast .timer, #hud.hud-contrast .hint {
+      background: #000; color: #fff; border-color: #fff; }
+    #hud.hud-contrast .banner { background: rgba(0,0,0,.78); }
+    #hud.hud-contrast .banner h1 { color: #fff; }
+  `
+  document.head.appendChild(style)
+}
 
 export class Hud {
   private readonly timerEl: HTMLElement
+  private readonly hintEl: HTMLElement
   private readonly bannerEl: HTMLElement
   private readonly bannerTimeEl: HTMLElement
+  private hintScheme: Scheme | null = null
 
   constructor(root: HTMLElement) {
+    injectA11yStyle()
     root.innerHTML = `
       <div class="timer">0.00</div>
-      <div class="hint">WASD/flechas: mover · Espacio: saltar · R: reiniciar · ratón: cámara</div>
+      <div class="hint"></div>
       <div class="banner"><h1>META</h1><p></p></div>`
     this.timerEl = root.querySelector('.timer') as HTMLElement
+    this.hintEl = root.querySelector('.hint') as HTMLElement
     this.bannerEl = root.querySelector('.banner') as HTMLElement
     this.bannerTimeEl = root.querySelector('.banner p') as HTMLElement
+
+    // Accesibilidad (US3): escala y contraste del HUD.
+    root.style.setProperty('--hud-scale', String(config.hudScale))
+    root.classList.toggle('hud-contrast', config.hudHighContrast)
   }
 
-  update(run: RunStateView): void {
+  update(run: RunStateView, scheme: Scheme = 'keyboardMouse'): void {
+    if (scheme !== this.hintScheme) {
+      this.hintScheme = scheme
+      this.hintEl.textContent = HINTS[scheme]
+    }
     this.timerEl.textContent = run.elapsedSimTime.toFixed(2)
     if (run.phase === 'won') {
       this.bannerEl.classList.add('show')
