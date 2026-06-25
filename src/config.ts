@@ -64,6 +64,22 @@ export const config = {
   hudScale: 1.0,
   hudHighContrast: false,
 
+  // --- Audio (005; capa de render, fuera del paso fijo; no afecta al determinismo) ---
+  audio: {
+    master: 1.0, // ganancia maestra
+    musicVolume: 0.5,
+    sfxVolume: 0.85,
+    mutedByDefault: false,
+    muteKey: 'KeyM', // tecla de silencio global
+    dir: 'audio/', // base relativa (servida en /play); el cargador prueba .ogg y luego .mp3
+    sfx: { jump: 'sfx_jump', land: 'sfx_land', hit: 'sfx_hit', finish: 'sfx_finish', respawn: 'sfx_respawn' },
+    music: 'music_gameplay', // CC0; opcional (puede no existir todavía → degrada en silencio)
+    // Umbrales del detector de eventos (tiempo de render):
+    jumpVyThreshold: 3, // m/s: dejar el suelo con vy mayor = salto (no caída de borde)
+    hitKnockbackThreshold: 3, // m/s de knockback para considerar "golpe"
+    respawnDistThreshold: 5, // m de salto de posición en un fotograma = reaparición
+  },
+
   // --- Obstáculo móvil ---
   obstacleAmplitude: 4.5, // m de vaivén (eje X)
   obstacleSpeed: 1.6, // rad/s de la fase senoidal
