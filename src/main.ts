@@ -11,8 +11,10 @@ import { loadAssets } from './render/assets'
 import { Input } from './input/input'
 import { Hud } from './ui/hud'
 import { Simulation } from './sim/simulation'
+import { registerServiceWorker } from './pwa/install'
 
 async function main(): Promise<void> {
+  registerServiceWorker() // PWA (004 · US4): offline tras la primera carga; no toca el paso fijo.
   await RAPIER.init()
 
   const sim = Simulation.create()

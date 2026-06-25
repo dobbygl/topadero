@@ -104,21 +104,21 @@ juega sin conexión; la landing sugiere instalar de forma no intrusiva.
 jugar en modo avión, comprobar paridad de física vs pestaña (quickstart US4). Depende de la
 experiencia táctil de US1; independiente de US2/US3.
 
-- [ ] T014 [P] [US4] Añadir los iconos y el color de tema de la marca Topadero en `public/` (set de
+- [X] T014 [P] [US4] Añadir los iconos y el color de tema de la marca Topadero en `public/` (set de
   iconos para instalación).
-- [ ] T015 [US4] Crear el Web App Manifest `public/manifest.webmanifest` (name/short_name, theme/
+- [X] T015 [US4] Crear el Web App Manifest `public/manifest.webmanifest` (name/short_name, theme/
   background, `display` standalone/fullscreen, `start_url`/`scope` relativos a `/play`) y enlazarlo
   desde `index.html` (research R8).
-- [ ] T016 [US4] Service worker que precachea el build del juego para uso offline (cache-first del
+- [X] T016 [US4] Service worker que precachea el build del juego para uso offline (cache-first del
   shell; el WASM de Rapier va embebido en el bundle JS, así que queda cubierto) con estrategia de
   actualización (activar la versión nueva en la siguiente carga, sin atascar al jugador), vía
   `vite-plugin-pwa` o a mano (`vite.config.ts` / `public/`) (research R9).
-- [ ] T017 [US4] Registro del service worker y estado de instalación en `src/pwa/install.ts`
+- [X] T017 [US4] Registro del service worker y estado de instalación en `src/pwa/install.ts`
   (detectar standalone/`appinstalled`, `canPrompt`).
-- [ ] T018 [US4] Invitación a instalar en `marketing/landing/`: capturar `beforeinstallprompt`, botón/
+- [X] T018 [US4] Invitación a instalar en `marketing/landing/`: capturar `beforeinstallprompt`, botón/
   aviso no intrusivo y descartable, sin reaparecer de forma molesta en la sesión, y nunca bloqueante
   (FR-017, FR-022).
-- [ ] T019 [US4] Fallback para navegadores sin prompt (iOS Safari) en `marketing/landing/`:
+- [X] T019 [US4] Fallback para navegadores sin prompt (iOS Safari) en `marketing/landing/`:
   instrucciones equivalentes de "Añadir a pantalla de inicio" (FR-017, AS2).
 - [ ] T020 [US4] Prueba de juego manual de US4 (quickstart): instalar, abrir a pantalla completa desde
   el icono, jugar en modo avión, comprobar actualización y paridad de física (FR-020).
