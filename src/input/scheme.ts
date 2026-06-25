@@ -4,8 +4,23 @@
 
 export type Scheme = 'keyboardMouse' | 'gamepad' | 'touch'
 
+/**
+ * Esquema inicial según el dispositivo: en uno táctil-puro (puntero `coarse` y sin `fine`, lo que
+ * reportan los móviles y el modo dispositivo de DevTools) arranca en `touch` para que el overlay
+ * aparezca de entrada, sin esperar al primer toque. En escritorio (o híbrido con ratón) arranca en
+ * `keyboardMouse`. Después, cualquier entrada cambia el esquema (sigue a la última fuente usada).
+ */
+function detectInitialScheme(): Scheme {
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    const coarse = window.matchMedia('(pointer: coarse)').matches
+    const fine = window.matchMedia('(pointer: fine)').matches
+    if (coarse && !fine) return 'touch'
+  }
+  return 'keyboardMouse'
+}
+
 export class SchemeTracker {
-  active: Scheme = 'keyboardMouse'
+  active: Scheme = detectInitialScheme()
 
   mark(s: Scheme): void {
     this.active = s

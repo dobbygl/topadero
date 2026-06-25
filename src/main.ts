@@ -84,7 +84,7 @@ async function main(): Promise<void> {
     )
     view.updatePlayerAnimation(ps.isGrounded, dtRender)
     view.setDebug(debug ? sim.getDebugRender() : null)
-    hud.update(sim.getRunState())
+    hud.update(sim.getRunState(), input.activeScheme)
     view.render(camera.camera)
     requestAnimationFrame(frame)
   }

@@ -10,7 +10,7 @@ import { GamepadInput, type InputHooks } from './gamepad'
 import { TouchInput } from './touch'
 import { TouchControls } from '../ui/touchControls'
 import { KeyboardMouseInput } from './keyboardMouse'
-import { SchemeTracker } from './scheme'
+import { SchemeTracker, type Scheme } from './scheme'
 import { inputPrefs } from './preferences'
 
 export class Input {
@@ -34,6 +34,11 @@ export class Input {
     this.touchControls = new TouchControls()
     this.touch = new TouchInput(hooks, this.touchControls)
     target.addEventListener('click', this.requestLock)
+  }
+
+  /** Esquema de entrada en uso (para que las vistas, p. ej. el HUD, adapten sus pistas). */
+  get activeScheme(): Scheme {
+    return this.scheme.active
   }
 
   // Pointer lock solo fuera del esquema táctil (con el dedo no se usa).
