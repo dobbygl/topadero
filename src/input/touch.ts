@@ -78,8 +78,8 @@ export class TouchInput {
       const dy = e.clientY - this.camLastY
       this.camLastX = e.clientX
       this.camLastY = e.clientY
-      const inv = config.invertCameraY ? -1 : 1
-      this.hooks.applyLook(dx * config.touchLookSensitivity, inv * dy * config.touchLookSensitivity)
+      // Sin inversión aquí: la sensibilidad e inversión las aplica el agregador en applyLook (US2).
+      this.hooks.applyLook(dx * config.touchLookSensitivity, dy * config.touchLookSensitivity)
       this.hooks.mark('touch')
     }
   }

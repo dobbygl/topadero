@@ -135,12 +135,12 @@ nombre y a través de un seam estable (la UI la aporta el shell; el guardado, la
 **Independent Test**: cambiar un binding o la sensibilidad por `config.ts` y comprobar el efecto en
 el comportamiento (quickstart US2).
 
-- [ ] T021 [P] [US2] Mapa de bindings con defaults en `config.ts` y lógica de reasignación
+- [X] T021 [P] [US2] Mapa de bindings con defaults en `config.ts` y lógica de reasignación
   (acción → control) en `src/input/` (agregador/adaptadores): reasignar el salto desasigna su control
   anterior (AS1).
-- [ ] T022 [P] [US2] Aplicar `cameraSensitivity` e inversión de ejes desde las preferencias en la ruta
+- [X] T022 [P] [US2] Aplicar `cameraSensitivity` e inversión de ejes desde las preferencias en la ruta
   de cámara de la entrada (`src/input/*`, `src/config.ts`) (AS2, AS3).
-- [ ] T023 [US2] Exponer un seam estable de preferencias (en memoria + defaults) listo para que lo
+- [X] T023 [US2] Exponer un seam estable de preferencias (en memoria + defaults) listo para que lo
   consuman las specs de shell (UI) y persistencia (guardado); documentar el diferimiento.
 - [ ] T024 [US2] Prueba de juego manual de US2 (quickstart): rebind de salto, sensibilidad e inversión.
 
@@ -155,11 +155,11 @@ el comportamiento (quickstart US2).
 **Independent Test**: activar reduced motion y ver la atenuación sin cambio de trayectoria; HUD legible;
 controles táctiles cómodos (quickstart US3).
 
-- [ ] T025 [P] [US3] Honrar `reducedMotion` en `src/render/followCamera.ts`: atenuar/omitir movimiento
+- [X] T025 [P] [US3] Honrar `reducedMotion` en `src/render/followCamera.ts`: atenuar/omitir movimiento
   de cámara no esencial; sembrar desde `prefers-reduced-motion`; sin tocar la pose del KCC ni el paso
   fijo (FR-008).
-- [ ] T026 [P] [US3] Opciones de legibilidad del HUD (contraste/tamaño) en `src/ui/hud.ts` (FR-009).
-- [ ] T027 [US3] Refinar tamaños de los objetivos táctiles y la no-oclusión en `src/ui/touchControls.ts`
+- [X] T026 [P] [US3] Opciones de legibilidad del HUD (contraste/tamaño) en `src/ui/hud.ts` (FR-009).
+- [X] T027 [US3] Refinar tamaños de los objetivos táctiles y la no-oclusión en `src/ui/touchControls.ts`
   (FR-010, AS2).
 - [ ] T028 [US3] Prueba de juego manual de US3 (quickstart): reduced motion, HUD y comodidad táctil.
 

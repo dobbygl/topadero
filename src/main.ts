@@ -3,6 +3,7 @@
 // SEGUNDOS al bucle (research R2; FIXED_DT en segundos).
 
 import * as RAPIER from '@dimforge/rapier3d-compat'
+import { config } from './config'
 import { advance, createLoopState } from './core/gameLoop'
 import { quatFromYaw } from './types'
 import { FollowCamera } from './render/followCamera'
@@ -25,6 +26,9 @@ async function main(): Promise<void> {
   view.resize()
 
   const camera = new FollowCamera(view.aspect)
+  // Accesibilidad (004 · US3): reduce el movimiento de cámara si la preferencia o el sistema lo pide.
+  camera.reducedMotion =
+    config.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const hud = new Hud(document.getElementById('hud') as HTMLElement)
   const input = new Input(view.renderer.domElement)
   const loop = createLoopState()

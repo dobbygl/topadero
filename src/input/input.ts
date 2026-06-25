@@ -10,6 +10,7 @@ import { GamepadInput, type InputHooks } from './gamepad'
 import { TouchInput } from './touch'
 import { TouchControls } from '../ui/touchControls'
 import { SchemeTracker } from './scheme'
+import { inputPrefs, edgeActionForKey } from './preferences'
 
 export class Input {
   yaw = 0 // mirando a -Z (forward = (-sin yaw, 0, -cos yaw))
@@ -47,8 +48,15 @@ export class Input {
 
   /** Aplica un delta de orientación de cámara (ratón, stick del mando o arrastre táctil). */
   private applyLook(dYaw: number, dPitch: number): void {
-    this.yaw -= dYaw
-    this.pitch = Math.max(config.cameraPitchMin, Math.min(config.cameraPitchMax, this.pitch - dPitch))
+    // Sensibilidad e inversión centralizadas (US2): valen para ratón, mando y táctil por igual.
+    const s = inputPrefs.cameraSensitivity
+    const sx = inputPrefs.invertCameraX ? -1 : 1
+    const sy = inputPrefs.invertCameraY ? -1 : 1
+    this.yaw -= dYaw * s * sx
+    this.pitch = Math.max(
+      config.cameraPitchMin,
+      Math.min(config.cameraPitchMax, this.pitch - dPitch * s * sy),
+    )
   }
 
   private onLockChange = (): void => {
@@ -72,23 +80,26 @@ export class Input {
   private onKeyDown = (e: KeyboardEvent): void => {
     if (e.repeat) return
     this.keys.add(e.code)
-    if (e.code === 'Space') this.edges.push({ kind: 'jump', timestamp: e.timeStamp / 1000 })
-    else if (e.code === 'KeyR') this.edges.push({ kind: 'restart', timestamp: e.timeStamp / 1000 })
+    const action = edgeActionForKey(e.code) // jump/restart según los bindings reasignables (US2)
+    if (action) this.edges.push({ kind: action, timestamp: e.timeStamp / 1000 })
     this.scheme.mark('keyboardMouse')
   }
 
   private onKeyUp = (e: KeyboardEvent): void => {
     this.keys.delete(e.code)
-    // Flanco de SOLTADO del salto (US2): mismo tratamiento que el de pulsado; el corte del salto
-    // variable se ventanea al sim-step de su timestamp → independiente de los FPS.
-    if (e.code === 'Space') this.edges.push({ kind: 'jumpRelease', timestamp: e.timeStamp / 1000 })
+    // Flanco de SOLTADO del salto: mismo tratamiento que el de pulsado; el corte del salto variable
+    // se ventanea al sim-step de su timestamp → independiente de los FPS. Tecla según los bindings.
+    if (inputPrefs.keys.jump.includes(e.code)) {
+      this.edges.push({ kind: 'jumpRelease', timestamp: e.timeStamp / 1000 })
+    }
   }
 
   private keyboardMoveAxis(): { x: number; y: number } {
-    const fwd = this.keys.has('KeyW') || this.keys.has('ArrowUp')
-    const back = this.keys.has('KeyS') || this.keys.has('ArrowDown')
-    const left = this.keys.has('KeyA') || this.keys.has('ArrowLeft')
-    const right = this.keys.has('KeyD') || this.keys.has('ArrowRight')
+    const down = (codes: string[]): boolean => codes.some((c) => this.keys.has(c))
+    const fwd = down(inputPrefs.keys.forward)
+    const back = down(inputPrefs.keys.back)
+    const left = down(inputPrefs.keys.left)
+    const right = down(inputPrefs.keys.right)
     return { x: (right ? 1 : 0) - (left ? 1 : 0), y: (fwd ? 1 : 0) - (back ? 1 : 0) }
   }
 

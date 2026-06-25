@@ -7,6 +7,7 @@
 import type { Config } from '../config'
 import type { InputEdge } from '../core/gameLoop'
 import type { Scheme } from './scheme'
+import { inputPrefs } from './preferences'
 
 export interface InputHooks {
   pushEdge: (e: InputEdge) => void
@@ -55,29 +56,29 @@ export class GamepadInput {
     }
 
     // Movimiento: stick izquierdo (axes 0,1). Adelante = -y (arriba del stick es -1).
-    const mv = applyDeadzone(pad.axes[0] ?? 0, pad.axes[1] ?? 0, this.config.gamepadDeadzone)
+    const mv = applyDeadzone(pad.axes[0] ?? 0, pad.axes[1] ?? 0, inputPrefs.deadzone)
     this.moveAxis = { x: mv.x, y: -mv.y }
     const moving = mv.x !== 0 || mv.y !== 0
 
     // Cámara: stick derecho (axes 2,3), rate-based con dt de render.
-    const look = applyDeadzone(pad.axes[2] ?? 0, pad.axes[3] ?? 0, this.config.gamepadDeadzone)
+    const look = applyDeadzone(pad.axes[2] ?? 0, pad.axes[3] ?? 0, inputPrefs.deadzone)
     const looking = look.x !== 0 || look.y !== 0
     if (looking && dt > 0) {
-      const inv = this.config.invertCameraY ? -1 : 1
+      // Sin inversión aquí: la sensibilidad e inversión las aplica el agregador en applyLook (US2).
       this.hooks.applyLook(
         look.x * this.config.gamepadLookSpeed * dt,
-        inv * look.y * this.config.gamepadLookSpeed * dt,
+        look.y * this.config.gamepadLookSpeed * dt,
       )
     }
 
     // Salto: flanco pulsar/soltar con timestamp del fotograma (mismo reloj que el bucle).
-    const jump = pad.buttons[this.config.gamepadJumpButton]?.pressed ?? false
+    const jump = pad.buttons[inputPrefs.gamepadJumpButton]?.pressed ?? false
     if (jump && !this.jumpDown) this.hooks.pushEdge({ kind: 'jump', timestamp: nowSec })
     else if (!jump && this.jumpDown) this.hooks.pushEdge({ kind: 'jumpRelease', timestamp: nowSec })
     this.jumpDown = jump
 
     // Reinicio
-    const restart = pad.buttons[this.config.gamepadRestartButton]?.pressed ?? false
+    const restart = pad.buttons[inputPrefs.gamepadRestartButton]?.pressed ?? false
     if (restart && !this.restartDown) this.hooks.pushEdge({ kind: 'restart', timestamp: nowSec })
     this.restartDown = restart
 
