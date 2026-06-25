@@ -2,10 +2,14 @@
 
 ## Efectos de sonido (SFX)
 
-Generados con **ElevenLabs** (text-to-sound-effects), cuenta de pago (Starter o superior), con
-**licencia de uso comercial**. Reproducibles con `scripts/gen-sfx.ts` (lee `ELEVENLABS_API_KEY` de
-`.env`; la clave nunca entra en el build). Archivos: `public/audio/sfx_*.{ogg,mp3}`
-(jump, land, hit, finish, respawn).
+`jump`, `land`, `hit`, `respawn`: generados con **ElevenLabs** (text-to-sound-effects), cuenta de
+pago (Starter o superior), con **licencia de uso comercial**. Reproducibles con `scripts/gen-sfx.ts`
+(lee `ELEVENLABS_API_KEY` de `.env`; la clave nunca entra en el build). Archivos:
+`public/audio/sfx_{jump,land,hit,respawn}.{ogg,mp3}`.
+
+`finish` (meta): **Kenney — Music Jingles** (`jingles_STEEL07`), **CC0**
+(https://kenney.nl/assets/music-jingles). Archivo: `public/audio/sfx_finish.{ogg,mp3}`. No se
+regenera con `gen-sfx.ts`.
 
 ## Música
 

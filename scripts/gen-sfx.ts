@@ -18,7 +18,8 @@ const SFX: { key: string; prompt: string; seconds: number }[] = [
   { key: 'sfx_jump', seconds: 0.5, prompt: 'Playful cartoon jump, soft springy boing with a light whoosh upward, bouncy and friendly, very short, clean, no reverb tail' },
   { key: 'sfx_land', seconds: 0.5, prompt: 'Soft cartoon landing, gentle cushioned thud with a tiny squish, playful, short, light low-end, no harshness' },
   { key: 'sfx_hit', seconds: 0.5, prompt: 'Comedic cartoon bonk, soft rubbery boing-thump as a character gets bumped away, springy, harmless and funny, short, bouncy' },
-  { key: 'sfx_finish', seconds: 1.5, prompt: 'Short triumphant arcade finish jingle, cheerful sparkle chime with an uplifting resolve, celebratory and bright' },
+  // sfx_finish: NO se genera aquí. La meta usa un jingle CC0 de Kenney (Music Jingles, STEEL07);
+  // ver CREDITS.md. No regenerar para no pisar el asset CC0.
   { key: 'sfx_respawn', seconds: 0.6, prompt: 'Soft pop and gentle ascending whoosh, friendly reappear sound with a light magical shimmer, short' },
 ]
 
