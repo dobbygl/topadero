@@ -31,7 +31,7 @@ landing de marketing en `marketing/landing/`. `src/sim/` NO se toca en esta feat
 
 **Purpose**: dejar el ajuste y los stubs de módulos listos sin cambiar comportamiento.
 
-- [ ] T001 Añadir las perillas de ajuste de la feature a `src/config.ts`: bindings por defecto,
+- [X] T001 Añadir las perillas de ajuste de la feature a `src/config.ts`: bindings por defecto,
   `deadzone`, `cameraSensitivity`, `invertX`/`invertY`, layout del overlay táctil (zonas y tamaños),
   `reducedMotion` por defecto, `hudScale`/`hudHighContrast` (Principio V; ver data-model.md).
 - [ ] T002 [P] Crear los stubs de los módulos nuevos con sus firmas exportadas:
@@ -50,13 +50,13 @@ y el comportamiento de teclado+ratón. Bloquea todas las historias de entrada.
 - [ ] T003 Extraer la lógica actual de teclado+ratón de `src/input/input.ts` a
   `src/input/keyboardMouse.ts` (adaptador), sin cambiar comportamiento (mismas teclas, pointer lock,
   flancos con `e.timeStamp`).
-- [ ] T004 Implementar `src/input/scheme.ts`: esquema activo (`keyboardMouse`/`gamepad`/`touch`) que
+- [X] T004 Implementar `src/input/scheme.ts`: esquema activo (`keyboardMouse`/`gamepad`/`touch`) que
   sigue a la última entrada usada; expone `markActive(kind)` que llaman los adaptadores y el esquema
   actual para mostrar/ocultar el overlay táctil.
-- [ ] T005 Refactor de `src/input/input.ts` a agregador: posee yaw/pitch, fusiona los adaptadores en
+- [X] T005 Refactor de `src/input/input.ts` a agregador: posee yaw/pitch, fusiona los adaptadores en
   un único `FrameInput { moveAxis, cameraYaw, edges }` y conserva exactamente la firma y el
   comportamiento previos (contrato en contracts/input-contract.md).
-- [ ] T006 Verificar la puerta de determinismo tras el refactor: `npx vitest run tests/determinism.test.ts`
+- [X] T006 Verificar la puerta de determinismo tras el refactor: `npx vitest run tests/determinism.test.ts`
   debe seguir en verde (no debe cambiar nada de la simulación).
 
 **Checkpoint**: la frontera de entrada es modular y el determinismo sigue intacto.
@@ -71,7 +71,7 @@ teclado+ratón y con cambio de esquema en caliente.
 **Independent Test**: completar el circuito solo con mando; completarlo solo en táctil; conectar/
 desconectar el mando en partida sin perder el control (quickstart US1).
 
-- [ ] T007 [P] [US1] Adaptador de mando en `src/input/gamepad.ts`: polling de `navigator.getGamepads()`
+- [X] T007 [P] [US1] Adaptador de mando en `src/input/gamepad.ts`: polling de `navigator.getGamepads()`
   por fotograma; stick izquierdo → `moveAxis` con deadzone radial (magnitud ≤ 1); stick derecho →
   delta de yaw/pitch; botón de salto → flancos `jump`/`jumpRelease` con timestamp = `now` del
   fotograma; manejo de conexión/desconexión (research R1, R3).
@@ -84,7 +84,7 @@ desconectar el mando en partida sin perder el control (quickstart US1).
 - [ ] T010 [US1] Cablear adaptadores en el agregador y el esquema activo en `src/input/input.ts`,
   `src/input/scheme.ts` y `src/main.ts`: mostrar el overlay solo en táctil, cambio en caliente
   (incluida conexión/desconexión de mando) y soltar entradas "pegadas" al desconectar o perder foco.
-- [ ] T011 [US1] EXTENDER la puerta de determinismo en `tests/determinism.test.ts` (OBLIGATORIO,
+- [X] T011 [US1] EXTENDER la puerta de determinismo en `tests/determinism.test.ts` (OBLIGATORIO,
   Principio II): caso de `moveAxis` analógico parcial (p. ej. magnitud 0.5) idéntico a 60/jitter/30/144 Hz,
   y caso de flancos de salto de fuente mando/táctil (mismos `InputEdge` con timestamp) idénticos.
 - [ ] T012 [P] [US1] (opcional) Tests unitarios del adaptador en `tests/input/`: deadzone/normalización

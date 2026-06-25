@@ -56,7 +56,7 @@ async function main(): Promise<void> {
     const dtRender = Math.min((nowMs - lastRenderMs) / 1000, 0.1)
     lastRenderMs = nowMs
 
-    advance(sim, loop, nowMs / 1000, input.getFrameInput())
+    advance(sim, loop, nowMs / 1000, input.getFrameInput(nowMs / 1000))
 
     const ps = sim.getPlayerState()
     camera.update(ps.position, input.yaw, input.pitch, dtRender)

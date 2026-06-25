@@ -84,8 +84,11 @@ export function stepPlayer(
     player.facingYaw = Math.atan2(mx, mz)
   }
   // Velocidad objetivo desde el input; la velocidad real se aproxima con rampa (US3, R5).
-  const tgtX = hasInput ? mx * config.moveSpeed : 0
-  const tgtZ = hasInput ? mz * config.moveSpeed : 0
+  // Intensidad proporcional (004 · FR-005): un stick/joystick a media deflexión avanza a media
+  // velocidad. El teclado tiene magnitud >= 1, así que min(mlen,1)=1 → sin cambio (no regresión).
+  const speedScale = Math.min(mlen, 1)
+  const tgtX = hasInput ? mx * config.moveSpeed * speedScale : 0
+  const tgtZ = hasInput ? mz * config.moveSpeed * speedScale : 0
   // Tasa de aproximación por estado: suelo accel/decel; aire control; aire sin input conserva
   // la velocidad (momento, no rígido). El empuje del obstáculo va aparte (no entra en la rampa).
   const rate = player.isGrounded ? (hasInput ? config.groundAccel : config.groundDecel) : hasInput ? config.airAccel : 0

@@ -1,9 +1,13 @@
-// Entrada del navegador: teclado (movimiento + flancos con timestamp) y ratón (pointer lock).
-// Posee el yaw/pitch crudos de la cámara (base del movimiento relativo, research R4).
-// Los timestamps de los flancos se pasan a SEGUNDOS (el bucle trabaja en segundos).
+// Agregador de entrada (004). Posee el yaw/pitch crudos de la cámara y produce un único
+// FrameInput, agnóstico de la fuente: teclado+ratón (inline) y mando (src/input/gamepad.ts) lo
+// rellenan; el esquema activo (scheme.ts) decide qué moveAxis se usa. Los flancos van a un buffer
+// compartido que el bucle consume por ventana de timestamp → deterministas (Principio II). El
+// táctil (src/input/touch.ts) se añade en la misma estructura. NO importa src/sim ni render.
 
 import { config } from '../config'
 import type { FrameInput, InputEdge } from '../core/gameLoop'
+import { GamepadInput } from './gamepad'
+import { SchemeTracker } from './scheme'
 
 export class Input {
   yaw = 0 // mirando a -Z (forward = (-sin yaw, 0, -cos yaw))
@@ -11,6 +15,8 @@ export class Input {
   private keys = new Set<string>()
   private edges: InputEdge[] = []
   private locked = false
+  private readonly scheme = new SchemeTracker()
+  private readonly gamepad: GamepadInput
 
   constructor(private readonly target: HTMLElement) {
     window.addEventListener('keydown', this.onKeyDown)
@@ -18,10 +24,22 @@ export class Input {
     document.addEventListener('pointerlockchange', this.onLockChange)
     document.addEventListener('mousemove', this.onMouseMove)
     target.addEventListener('click', this.requestLock)
+
+    this.gamepad = new GamepadInput(config, {
+      pushEdge: (e) => this.edges.push(e),
+      applyLook: (dYaw, dPitch) => this.applyLook(dYaw, dPitch),
+      mark: (s) => this.scheme.mark(s),
+    })
   }
 
   requestLock = (): void => {
     if (!this.locked) void this.target.requestPointerLock()
+  }
+
+  /** Aplica un delta de orientación de cámara (ratón, stick del mando o arrastre táctil). */
+  private applyLook(dYaw: number, dPitch: number): void {
+    this.yaw -= dYaw
+    this.pitch = Math.max(config.cameraPitchMin, Math.min(config.cameraPitchMax, this.pitch - dPitch))
   }
 
   private onLockChange = (): void => {
@@ -33,11 +51,8 @@ export class Input {
     const clamp = config.mouseDeltaClamp
     const dx = Math.max(-clamp, Math.min(clamp, e.movementX))
     const dy = Math.max(-clamp, Math.min(clamp, e.movementY))
-    this.yaw -= dx * config.mouseSensitivity
-    this.pitch = Math.max(
-      config.cameraPitchMin,
-      Math.min(config.cameraPitchMax, this.pitch - dy * config.mouseSensitivity),
-    )
+    this.applyLook(dx * config.mouseSensitivity, dy * config.mouseSensitivity)
+    this.scheme.mark('keyboardMouse')
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -45,6 +60,7 @@ export class Input {
     this.keys.add(e.code)
     if (e.code === 'Space') this.edges.push({ kind: 'jump', timestamp: e.timeStamp / 1000 })
     else if (e.code === 'KeyR') this.edges.push({ kind: 'restart', timestamp: e.timeStamp / 1000 })
+    this.scheme.mark('keyboardMouse')
   }
 
   private onKeyUp = (e: KeyboardEvent): void => {
@@ -54,13 +70,19 @@ export class Input {
     if (e.code === 'Space') this.edges.push({ kind: 'jumpRelease', timestamp: e.timeStamp / 1000 })
   }
 
-  getFrameInput(): FrameInput {
+  private keyboardMoveAxis(): { x: number; y: number } {
     const fwd = this.keys.has('KeyW') || this.keys.has('ArrowUp')
     const back = this.keys.has('KeyS') || this.keys.has('ArrowDown')
     const left = this.keys.has('KeyA') || this.keys.has('ArrowLeft')
     const right = this.keys.has('KeyD') || this.keys.has('ArrowRight')
+    return { x: (right ? 1 : 0) - (left ? 1 : 0), y: (fwd ? 1 : 0) - (back ? 1 : 0) }
+  }
+
+  getFrameInput(nowSec: number = performance.now() / 1000): FrameInput {
+    this.gamepad.poll(nowSec)
+    const moveAxis = this.scheme.active === 'gamepad' ? this.gamepad.getMoveAxis() : this.keyboardMoveAxis()
     return {
-      moveAxis: { x: (right ? 1 : 0) - (left ? 1 : 0), y: (fwd ? 1 : 0) - (back ? 1 : 0) },
+      moveAxis,
       cameraYaw: this.yaw,
       edges: this.edges,
     }

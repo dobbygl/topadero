@@ -230,6 +230,22 @@ describe('Principio II — determinismo / independencia de FPS', () => {
     expect(Math.hypot(r.nums[8], r.nums[9]), 'la rampa debe converger a la velocidad de crucero').toBeGreaterThan(6)
   })
 
+  it('US1(004): moveAxis analógico (mando/táctil) → idéntico entre cadencias y proporcional (FR-005)', () => {
+    // Mando y táctil rellenan el MISMO FrameInput; basta cubrir la magnitud parcial. Medio stick
+    // avanza a media velocidad y es determinista a cualquier FPS. Los flancos de salto de
+    // mando/táctil son los mismos InputEdge con timestamp → ya cubiertos por los casos de arriba.
+    const c = flatSpawn()
+    const half: Scenario = { moveAxis: { x: 0, y: 0.5 }, cameraYaw: 0, edges: [], durationSec: 120 * DT }
+    const full: Scenario = { moveAxis: { x: 0, y: 1 }, cameraYaw: 0, edges: [], durationSec: 120 * DT }
+    expectIdenticalAcrossCadences(half, c)
+    const rHalf = runScenario(half, CADENCES['60hz'], c)
+    const rFull = runScenario(full, CADENCES['60hz'], c)
+    const dHalf = Math.hypot(rHalf.nums[0], rHalf.nums[2])
+    const dFull = Math.hypot(rFull.nums[0], rFull.nums[2])
+    expect(dHalf, 'medio stick debe avanzar').toBeGreaterThan(1)
+    expect(dFull, 'stick completo avanza claramente más que medio (intensidad proporcional)').toBeGreaterThan(dHalf * 1.5)
+  })
+
   it('US1+US3: recorrido largo con varios saltos (y posibles caídas/respawn) → idéntico', () => {
     const edges: InputEdge[] = [0.4, 1.0, 1.6, 2.2, 2.8].map((t, i) => ({
       kind: 'jump',
