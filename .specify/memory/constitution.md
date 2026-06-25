@@ -1,57 +1,40 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.2.0 -> 2.0.0
+Version change: 2.0.0 -> 2.1.0
 Ratification: 2026-06-24 (sin cambios)
-Amendment date: 2026-06-24
-Bump rationale: MAJOR. Redefine el PROPÓSITO del proyecto, de "prototipo que valida una
-hipótesis de feel" a "juego completo publicable en navegador", y de forma incompatible hacia
-atrás levanta los vetos del antiguo Out of Scope de prototipo (audio, menús/shell de juego,
-persistencia local, varios circuitos y progresión básica). Eso cambia el contrato de alcance
-del Principio III, así que es MAJOR. Conserva INTACTOS los invariantes de corrección que
-hicieron bueno el prototipo: determinismo e independencia de FPS (II, NO NEGOCIABLE), frontera
-headless render/simulación, colisión sobre primitivas, centralización del ajuste en config.ts
-(V) y "la sensación de juego manda" (I). Multijugador/red y la colisión por mallas (collmesh)
-siguen fuera de alcance.
+Amendment date: 2026-06-25
+Bump rationale: MINOR. Amplía materialmente una guía de la sección "Restricciones técnicas y de
+plataforma": la plataforma pasa de "navegador de escritorio" a "navegador de escritorio y móvil,
+con controles táctiles". Desbloquea la spec 004 (entrada y accesibilidad: gamepad + táctil/móvil).
+NO redefine ni elimina ningún principio: los seis (I-VI) quedan intactos. Sigue siendo un jugador,
+en local, web estática sin backend. Fuera de alcance siguen: apps nativas en tiendas (el destino es
+la web, ahora también web móvil), multijugador/red, backend/persistencia en servidor y collmesh.
 
-Principios:
-  I.   La sensación de juego manda — CONSERVADO. Reencuadrado: sigue siendo el cimiento; ninguna
-       funcionalidad de producto (audio, menús, contenido, progresión) puede regresar el control
-       validado.
-  II.  Física determinista e independiente de FPS (NO NEGOCIABLE) — CONSERVADO sin cambios de
-       fondo. Aclarado: audio, UI/shell y persistencia corren FUERA del paso fijo y no introducen
-       no-determinismo.
-  III. Disciplina de alcance del prototipo (YAGNI) -> "Alcance de producto y disciplina de
-       acabado" — REDEFINIDO. El alcance pasa de prototipo a juego publicable; se levantan los
-       vetos citados; se mantienen como reglas duras la colisión sobre primitivas, la frontera
-       headless y el render carve-out (mallas/animación) de v1.1.0/v1.2.0.
-  IV.  Rebanadas verticales jugables — CONSERVADO. Generalizado más allá de las historias P1-P3
-       de la spec 001.
-  V.   Comportamiento sobre cifras: config.ts — CONSERVADO. Extendido a las nuevas perillas
-       (volúmenes de audio, ajustes, etc.).
-  VI.  Acabado de producto publicable — AÑADIDO. Fija el listón de "publicable": shell de juego,
-       audio, persistencia local y jugable de extremo a extremo sin consola ni flags de dev.
+Principios: I-VI CONSERVADOS sin cambios de texto.
 
-Secciones añadidas: Principio VI; subsección "Distribución" en Restricciones técnicas; puerta
-"jugable de extremo a extremo" en el flujo de desarrollo.
+Secciones modificadas:
+  - Restricciones técnicas y de plataforma. "Plataforma" ahora incluye móvil + controles táctiles,
+    con el guardarraíl de que los flancos táctiles (botón de salto en pantalla) y los ejes del
+    joystick virtual se traducen en src/input y se consumen DENTRO del paso fijo igual que teclado y
+    mando (Principio II intacto). "Rendimiento" admite un suelo de FPS propio en móvil (a concretar
+    en la spec 004) sin cambiar el determinismo. "Distribución" aclara que la web estática es
+    accesible también desde navegador móvil.
 
-Secciones redefinidas/eliminadas: la lista de Out of Scope de prototipo (audio, menús,
-progresión, varios niveles) se sustituye por el contrato de alcance de producto del Principio
-III. Multijugador/red y collmesh permanecen explícitamente fuera.
+Secciones añadidas/eliminadas: ninguna.
 
 Estado de plantillas y documentos dependientes:
   ✅ .specify/templates/plan-template.md  (Constitution Check genérico que apunta a este archivo; sin cambios)
   ✅ .specify/templates/spec-template.md  (genérica; sin cambios)
-  ✅ .specify/templates/tasks-template.md (sin referencias de alcance que tocar)
+  ✅ .specify/templates/tasks-template.md (sin cambios)
   ✅ .specify/templates/checklist-template.md (genérica; sin cambios)
-  ⚠ CLAUDE.md (raíz) — PENDIENTE: actualizar "Reglas no negociables" y el encuadre de prototipo
-    cuando aterricen las specs de producto (audio/shell/persistencia).
-  ⚠ README.md — PENDIENTE: reencuadrar de "prototipo/MVP" a "juego" al cerrar el corte mínimo
-    publicable (audio + shell + persistencia local de la mejor marca).
+  ⚠ CLAUDE.md (raíz) — OPCIONAL: mencionar la plataforma móvil/táctil al aterrizar la spec 004; hoy
+    no contradice, su regla de alcance apunta a esta constitución.
+  ⚠ README.md — PENDIENTE: reencuadre prototipo -> juego (y mención de móvil) al cerrar el corte
+    mínimo publicable.
 
 Follow-up TODOs:
-  - El feel ya encaminado (specs 003-007) sigue su curso; las specs de producto (audio, shell,
-    persistencia, más circuitos, progresión básica) se planifican a partir de la 008.
+  - El suelo de rendimiento en móvil (si difiere del de escritorio) se concreta en la spec 004.
   - Actualizar CLAUDE.md y README.md al cerrar el corte mínimo publicable.
 -->
 
@@ -220,8 +203,14 @@ guardado, el juego sigue leyéndose como demo técnica por bueno que sea el cont
 
 ## Restricciones técnicas y de plataforma
 
-- **Plataforma**: navegador de escritorio, un solo jugador, en local. Sin backend y sin red. SÍ se
-  permite persistencia LOCAL mediante el almacenamiento del navegador (mejor marca, preferencias).
+- **Plataforma (ampliada en v2.1.0)**: navegador de escritorio y móvil, un solo jugador, en local.
+  Sin backend y sin red. SÍ se permite persistencia LOCAL mediante el almacenamiento del navegador
+  (mejor marca, preferencias). En móvil se admiten controles táctiles (joystick virtual para mover,
+  botón de salto en pantalla, gesto de arrastre para la cámara); como cualquier otra entrada, sus
+  flancos (p. ej. el toque del botón de salto) y los ejes del joystick virtual se traducen en
+  `src/input` y se consumen DENTRO del paso fijo, igual que teclado y mando, sin romper el
+  determinismo (Principio II). El destino sigue siendo la web (ahora también web móvil); las apps
+  nativas en tiendas quedan fuera de alcance.
 - **Construcción de escena**: la geometría de simulación y colisión usa solo primitivas (cápsulas,
   cajas, cilindros). Personaje con collider cápsula y controlador de personaje cinemático. La capa de
   render PUEDE vestir la escena con mallas low-poly, texturas decorativas y animación esqueletal del
@@ -230,13 +219,15 @@ guardado, el juego sigue leyéndose como demo técnica por bueno que sea el cont
   no-determinismo (Principio II).
 - **Físicas**: paso de tiempo fijo y desacoplado del render (ver Principio II).
 - **Rendimiento**: objetivo >= 60 FPS en un navegador de escritorio típico, sin caer por debajo de
-  un nivel jugable (SC-008), con el audio, la interfaz y el arte decorativo cargados. El arte es
-  low-poly y de peso acotado a propósito; su carga no debe degradar este objetivo ni el paso fijo.
+  un nivel jugable (SC-008), con el audio, la interfaz y el arte decorativo cargados. En navegador
+  móvil el objetivo PUEDE relajarse a un suelo de FPS propio (a concretar en la spec 004) si el
+  hardware lo exige, pero el determinismo y el paso fijo NO cambian. El arte es low-poly y de peso
+  acotado a propósito; su carga no debe degradar este objetivo ni el paso fijo.
 - **Recuperación**: tras caer por debajo del umbral, el jugador recupera el control en una posición
   jugable en pocos segundos (objetivo <= 3 s, SC-005), sin recargar la página.
 - **Distribución (v2.0.0)**: el juego DEBE poder publicarse como web estática autocontenida (por
-  ejemplo GitHub Pages o itch.io), sin servidor en ejecución. El build de producción no DEBE
-  requerir un backend.
+  ejemplo GitHub Pages o itch.io), accesible también desde navegador móvil, sin servidor en
+  ejecución. El build de producción no DEBE requerir un backend.
 - **Stack concreto**: el motor de render y la biblioteca de físicas se eligen en el plan
   (`/speckit-plan`). La elección DEBE ser ejecutable en navegador y respetar estas restricciones;
   esta constitución no fija librerías concretas.
@@ -281,4 +272,4 @@ Esta constitución prevalece sobre las prácticas ad hoc durante el desarrollo d
   persistencia en servidor, collmesh) requiere enmendar primero la spec, y esta constitución si toca
   un principio, antes de implementarse.
 
-**Version**: 2.0.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-24
+**Version**: 2.1.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-25
