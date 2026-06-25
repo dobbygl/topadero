@@ -61,8 +61,16 @@ function runScenario(scn: Scenario, frameDurations: number[], circuitDef?: Circu
     cameraYaw: scn.cameraYaw,
     edges: scn.edges.map((e) => ({ ...e })), // clon: advance() muta el buffer
   }
+  // pico de altura a lo largo de la línea (solo lectura). Se usa SOLO en aserciones de
+  // comportamiento a 60 Hz (donde cada fotograma = un paso → muestreo por sim-step). NO entra en
+  // la comparación entre cadencias: a 30 Hz un fotograma agrupa 2 pasos y el muestreo por
+  // fotograma podría perderse el paso del ápice. El determinismo del arco se comprueba comparando
+  // el estado canónico (incluye position.y y verticalVelocity) en un paso EN VUELO (R7).
+  let peakY = -Infinity
   for (const now of buildTimeline(frameDurations, scn.durationSec)) {
     advance(sim, state, now, frame)
+    const y = sim.getPlayerState().position.y
+    if (y > peakY) peakY = y
   }
   const p = sim.getPlayerState()
   const r = sim.getRunState()
@@ -77,10 +85,12 @@ function runScenario(scn: Scenario, frameDurations: number[], circuitDef?: Circu
   return {
     stepIndex: state.stepIndex,
     phase: r.phase,
+    peakY,
     nums: [
       p.position.x, p.position.y, p.position.z,
       p.velocity.x, p.velocity.y, p.velocity.z,
       p.verticalVelocity, p.isGrounded ? 1 : 0,
+      p.horizontalVelocity.x, p.horizontalVelocity.z, // rampa de locomoción (US3, R8)
       r.elapsedSimTime,
       ...obsNums,
     ],
@@ -133,6 +143,91 @@ describe('Principio II — determinismo / independencia de FPS', () => {
       edges: [{ kind: 'jump', timestamp: jumpT }],
       durationSec: 90 * DT,
     })
+  })
+
+  it('US1: salto BUFFERIZADO (pulsado en el aire antes de aterrizar) → idéntico y se dispara', () => {
+    // El jugador cae desde y=3.0 hasta el reposo (~1.9). El flanco de salto cae EN EL AIRE
+    // (t=0.20), dentro de jumpBufferTime antes del aterrizaje: se recuerda y se ejecuta al tocar
+    // suelo. La comparación entre cadencias ocurre EN PLENO ASCENSO (33·DT ≈ 0.55 s), donde
+    // position.y es sensible al paso exacto en que se disparó → un buffer NO determinista
+    // (consumido por fotograma) divergiría entre 30 y 144 Hz y fallaría aquí (R7).
+    const c = miniCircuit(
+      { id: 'far', kind: 'oscillate', base: { x: 0, y: -50, z: 0 }, color: 0 },
+      { x: 0, y: 3.0, z: 0 },
+      flatGround(1.0),
+    )
+    const scn: Scenario = {
+      moveAxis: { x: 0, y: 0 },
+      cameraYaw: 0,
+      edges: [{ kind: 'jump', timestamp: 0.2 }],
+      durationSec: 33 * DT,
+    }
+    expectIdenticalAcrossCadences(scn, c)
+    const r = runScenario(scn, CADENCES['60hz'], c)
+    expect(r.peakY, 'el salto bufferizado debe elevar al jugador por encima del reposo (~1.9)').toBeGreaterThan(2.5)
+  })
+
+  // --- US2: salto de altura variable (lanzar al máximo, cortar al soltar) + gravedad asimétrica ---
+  const flatSpawn = () =>
+    miniCircuit(
+      { id: 'far', kind: 'oscillate' as const, base: { x: 0, y: -50, z: 0 }, color: 0 },
+      { x: 0, y: 1.9, z: 0 }, // reposo sobre flatGround(1.0): 1.0 + radio 0.4 + medio 0.5
+      flatGround(1.0),
+    )
+
+  it('US2: salto MANTENIDO vs SOLTADO temprano → cada uno idéntico a 60/jitter/30/144 Hz', () => {
+    // Apoyado en suelo plano; salto en t=0.10. La comparación entre cadencias ocurre EN VUELO
+    // (18·DT ≈ 0.30 s): position.y y verticalVelocity son sensibles al paso EXACTO del corte →
+    // un corte no determinista (muestreo de "mantenido" por fotograma) divergiría aquí (R3, R7).
+    const c = flatSpawn()
+    const held: Scenario = {
+      moveAxis: { x: 0, y: 0 },
+      cameraYaw: 0,
+      edges: [{ kind: 'jump', timestamp: 0.1 }],
+      durationSec: 18 * DT,
+    }
+    const early: Scenario = {
+      moveAxis: { x: 0, y: 0 },
+      cameraYaw: 0,
+      edges: [
+        { kind: 'jump', timestamp: 0.1 },
+        { kind: 'jumpRelease', timestamp: 0.12 },
+      ],
+      durationSec: 18 * DT,
+    }
+    expectIdenticalAcrossCadences(held, c)
+    expectIdenticalAcrossCadences(early, c)
+  })
+
+  it('US2: mantener salta más alto que soltar pronto; un toque siempre da un hop mínimo (FR-004)', () => {
+    const c = flatSpawn()
+    const long = (edges: InputEdge[]): Scenario => ({ moveAxis: { x: 0, y: 0 }, cameraYaw: 0, edges, durationSec: 120 * DT })
+    const heldPeak = runScenario(long([{ kind: 'jump', timestamp: 0.1 }]), CADENCES['60hz'], c).peakY
+    const earlyPeak = runScenario(
+      long([{ kind: 'jump', timestamp: 0.1 }, { kind: 'jumpRelease', timestamp: 0.117 }]),
+      CADENCES['60hz'],
+      c,
+    ).peakY
+    const rest = 1.9
+    expect(earlyPeak, 'un toque ultracorto debe producir un hop mínimo perceptible (no nulo)').toBeGreaterThan(rest + 0.1)
+    expect(heldPeak - earlyPeak, 'mantener debe subir claramente más que soltar pronto').toBeGreaterThan(0.8)
+  })
+
+  it('US3: locomoción con rampa (moveAxis CONSTANTE) → trayectoria idéntica entre cadencias', () => {
+    // moveAxis constante (diagonal) y cámara girada, sobre suelo plano amplio: la rampa de
+    // velocidad se integra con dt → idéntica a 30/60/jitter/144 Hz. R1: el movimiento es
+    // held-sampled, así que la garantía es "misma trayectoria con input mantenido"; por eso el
+    // escenario NO cambia de dirección. El vector canónico incluye horizontalVelocity (R8).
+    const c = miniCircuit(
+      { id: 'far', kind: 'oscillate', base: { x: 0, y: -50, z: 0 }, color: 0 },
+      { x: 0, y: 1.9, z: 0 },
+      flatGround(1.0),
+    )
+    const scn: Scenario = { moveAxis: { x: 0.6, y: 1 }, cameraYaw: 0.3, edges: [], durationSec: 120 * DT }
+    expectIdenticalAcrossCadences(scn, c)
+    const r = runScenario(scn, CADENCES['60hz'], c)
+    expect(Math.hypot(r.nums[0], r.nums[2]), 'el jugador debe avanzar').toBeGreaterThan(2)
+    expect(Math.hypot(r.nums[8], r.nums[9]), 'la rampa debe converger a la velocidad de crucero').toBeGreaterThan(6)
   })
 
   it('US1+US3: recorrido largo con varios saltos (y posibles caídas/respawn) → idéntico', () => {

@@ -28,6 +28,7 @@ Topadero es el prototipo (MVP) de un juego de plataformas de obstáculos que cor
 - **Control en tercera persona** con cámara orbital que sigue al personaje de forma suave, sin saltos bruscos.
 - **Físicas deterministas e independientes de la tasa de fotogramas**: el mismo input produce la misma trayectoria a 30 o a 144 FPS.
 - **Salto solo apoyado**: nada de doble salto ni salto en el aire.
+- **Pase de feel del control (Feature 003)**: el salto perdona errores de timing (*jump buffering* + *coyote time*) y su altura se modula con la pulsación (un toque salta poco, mantener salta más alto, con un mínimo garantizado); movimiento con peso (rampa de aceleración/frenado), control aéreo ajustable y gravedad asimétrica (caída más rápida, mejor sensación de salto). Todo se consume dentro del paso fijo, así que sigue siendo idéntico a 30 o 144 FPS.
 - **Circuito con variedad de obstáculos**: plataformas, rampa y varios obstáculos móviles deterministas (vaivén, barra giratoria, péndulo, empujador) más una plataforma portante horizontal y un atajo arriesgado.
 - **Cronómetro por intento** y estado de victoria con el tiempo al cruzar la meta.
 - **Respawn al caer** en pocos segundos y **reinicio del intento** con una tecla, sin recargar la página.
@@ -40,7 +41,7 @@ La **colisión y la simulación** usan solo primitivas (cápsulas, cajas, cilind
 | Acción | Tecla / entrada |
 |---|---|
 | Mover (relativo a la cámara) | `W` `A` `S` `D` o flechas |
-| Saltar (solo apoyado) | `Espacio` |
+| Saltar (solo apoyado; mantener = más alto) | `Espacio` |
 | Orbitar la cámara | Ratón (clic en el canvas para capturar el puntero) |
 | Reiniciar el intento | `R` |
 | Debug de físicas (colliders) | `B` (o `?debug` en la URL) |
@@ -106,6 +107,8 @@ El MVP se construyó con [Spec Kit](https://github.com/github/spec-kit), siguien
 - [x] **P3 — Caída y reinicio.** Respawn y reinicio del intento sin recargar.
 
 **Feature 002 — variedad de obstáculos + vestido gráfico** (constitución v1.2.0): implementada y *code-complete*, pendiente de prueba de juego manual. Añade 3 tipos nuevos de obstáculo determinista + plataformas portantes, identidad visual 2D, mallas low-poly y un personaje animado, **manteniendo el determinismo** (la puerta automática sigue en verde) y la **colisión sobre primitivas**. Documentos en [`specs/002-obstacle-variety-and-art/`](specs/002-obstacle-variety-and-art/).
+
+**Feature 003 — pase de feel del control**: implementada y *code-complete*, pendiente de prueba de juego manual y afinado de cifras. Añade jump buffering, coyote afinado, salto de altura variable (con altura mínima garantizada), control aéreo, aceleración/desaceleración en suelo y gravedad asimétrica, **todo dentro del paso fijo**: la puerta de determinismo crece con casos de salto bufferizado, soltado-temprano-vs-mantenido (muestreo de pico) y rampa de locomoción, y sigue en verde a las 4 cadencias. Documentos en [`specs/003-control-feel-pass/`](specs/003-control-feel-pass/).
 
 Cada push a `main` ejecuta en GitHub Actions:
 

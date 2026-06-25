@@ -12,6 +12,7 @@ export interface StepInput {
   moveAxis: { x: number; y: number } // x = lateral (+derecha), y = avance (+adelante)
   cameraYaw: number // escalar crudo de la cámara; base del movimiento relativo
   jump: boolean // un flanco de salto cayó en la ventana de este paso
+  jumpRelease: boolean // un flanco de SOLTADO de salto cayó en la ventana de este paso (US2)
   restart: boolean // un flanco de reinicio cayó en la ventana de este paso
 }
 
@@ -20,6 +21,7 @@ export interface PlayerStateView {
   facingYaw: number
   velocity: Vec3
   verticalVelocity: number
+  horizontalVelocity: { x: number; z: number } // velocidad horizontal con rampa (US3; velX/velZ)
   isGrounded: boolean
 }
 

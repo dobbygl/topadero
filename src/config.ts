@@ -22,6 +22,18 @@ export const config = {
   autostepMinWidth: 0.1,
   autostepIncludeDynamic: false,
 
+  // --- Feel del control (003; todo se consume dentro del paso fijo; afinar en playtest) ---
+  // US1 — salto que perdona:
+  jumpBufferTime: 0.12, // s; un flanco de salto pulsado hasta aquí antes de aterrizar se recuerda
+  // US2 — salto de altura variable + gravedad asimétrica:
+  jumpReleaseVelocity: 3.5, // m/s; al soltar en ascenso, vy se corta a este suelo (= salto mínimo, FR-004)
+  fallGravityMult: 1.6, // × gravity.y al caer (caída más rápida; 1 = como el MVP)
+  lowJumpGravityMult: 1.8, // × gravity.y al ascender con el salto ya soltado (1 = como el MVP)
+  // US3 — locomoción con peso + control aéreo (rampa de velocidad; ajustables por separado):
+  groundAccel: 70, // m/s^2 rampa de arranque en suelo
+  groundDecel: 90, // m/s^2 rampa de frenado en suelo
+  airAccel: 35, // m/s^2 control aéreo (aceleración horizontal en el aire; separada del suelo)
+
   // --- Cámara (capa de render; no afecta a la simulación) ---
   cameraFov: 60, // grados
   cameraNear: 0.1,
