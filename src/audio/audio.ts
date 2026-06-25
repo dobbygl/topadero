@@ -15,7 +15,9 @@ export class AudioManager {
   private musicGain!: GainNode
   private sfxGain!: GainNode
   private readonly buffers = new Map<string, AudioBuffer>()
-  private musicSource: AudioBufferSourceNode | null = null
+  private musicSources: AudioBufferSourceNode[] = []
+  private musicTimer: ReturnType<typeof setInterval> | null = null
+  private nextMusicStart = 0
   private muted: boolean = config.audio.mutedByDefault
 
   init(): void {
@@ -73,21 +75,60 @@ export class AudioManager {
     src.start()
   }
 
+  // Bucle de música con crossfade: cada repetición empieza `xf` antes de que acabe la anterior y se
+  // funde con ella, así el empalme no tiene corte perceptible (FR-004). Un planificador con lookahead
+  // (setInterval) va programando las repeticiones por adelantado con el reloj del AudioContext.
   startMusic(): void {
-    if (!this.ctx || this.musicSource) return
+    if (!this.ctx || this.musicTimer !== null) return
     const buf = this.buffers.get(config.audio.music)
     if (!buf) return
+    const xf = Math.min(config.audio.musicCrossfade, buf.duration / 2)
+    const period = buf.duration - xf
+    this.nextMusicStart = this.ctx.currentTime + 0.1
+    const schedule = (): void => {
+      if (!this.ctx) return
+      while (this.nextMusicStart < this.ctx.currentTime + 1) {
+        this.scheduleMusicOnce(buf, this.nextMusicStart, xf)
+        this.nextMusicStart += period
+      }
+    }
+    schedule()
+    this.musicTimer = setInterval(schedule, 500)
+  }
+
+  private scheduleMusicOnce(buf: AudioBuffer, when: number, xf: number): void {
+    if (!this.ctx) return
     const src = this.ctx.createBufferSource()
     src.buffer = buf
-    src.loop = true
-    src.connect(this.musicGain)
-    src.start()
-    this.musicSource = src
+    const g = this.ctx.createGain()
+    src.connect(g)
+    g.connect(this.musicGain)
+    const end = when + buf.duration
+    g.gain.setValueAtTime(0, when)
+    g.gain.linearRampToValueAtTime(1, when + xf)
+    g.gain.setValueAtTime(1, end - xf)
+    g.gain.linearRampToValueAtTime(0, end)
+    src.start(when)
+    src.stop(end + 0.05)
+    this.musicSources.push(src)
+    src.onended = () => {
+      this.musicSources = this.musicSources.filter((s) => s !== src)
+    }
   }
 
   stopMusic(): void {
-    this.musicSource?.stop()
-    this.musicSource = null
+    if (this.musicTimer !== null) {
+      clearInterval(this.musicTimer)
+      this.musicTimer = null
+    }
+    for (const s of this.musicSources) {
+      try {
+        s.stop()
+      } catch {
+        // ya detenido
+      }
+    }
+    this.musicSources = []
   }
 
   setMusicVolume(v: number): void {

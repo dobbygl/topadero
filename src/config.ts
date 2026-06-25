@@ -69,6 +69,7 @@ export const config = {
     master: 1.0, // ganancia maestra
     musicVolume: 0.5,
     sfxVolume: 0.85,
+    musicCrossfade: 2, // s de crossfade en el bucle de música (loop sin corte perceptible)
     mutedByDefault: false,
     muteKey: 'KeyM', // tecla de silencio global
     dir: 'audio/', // base relativa (servida en /play); el cargador prueba .ogg y luego .mp3

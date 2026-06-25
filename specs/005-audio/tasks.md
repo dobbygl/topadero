@@ -94,7 +94,7 @@ equilibrada.
 **Independent Test**: al jugar suena la música en bucle sin corte perceptible; bajar el volumen de
 música no afecta a los efectos (y viceversa); con música + efectos a la vez no satura (quickstart US2).
 
-- [ ] T012 [P] [US2] Obtener y colocar la música CC0/royalty-free loopable en
+- [X] T012 [P] [US2] Obtener y colocar la música CC0/royalty-free loopable en
   `public/audio/music_gameplay.{ogg,mp3}` y registrar sus créditos/licencia.
 - [X] T013 [US2] Reproducir la música en bucle enrutada al gain de música (p. ej. `<audio loop>` vía
   `MediaElementAudioSourceNode`, o `AudioBufferSourceNode.loop`), con volumen independiente del de SFX;
