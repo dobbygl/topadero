@@ -10,7 +10,7 @@ import type { Simulation } from '../sim/simulation'
 import type { StepInput } from '../types'
 
 export interface InputEdge {
-  kind: 'jump' | 'restart'
+  kind: 'jump' | 'jumpRelease' | 'restart'
   timestamp: number // reloj (mismo origen que requestAnimationFrame)
 }
 
@@ -53,10 +53,12 @@ export function advance(sim: Simulation, state: LoopState, now: number, frame: F
     const winStart = state.simStartWall + k * DT
     const winEnd = winStart + DT
     let jump = false
+    let jumpRelease = false
     let restart = false
     for (const e of frame.edges) {
       if (e.timestamp >= winStart && e.timestamp < winEnd) {
         if (e.kind === 'jump') jump = true
+        else if (e.kind === 'jumpRelease') jumpRelease = true
         else restart = true
       }
     }
@@ -64,6 +66,7 @@ export function advance(sim: Simulation, state: LoopState, now: number, frame: F
       moveAxis: frame.moveAxis,
       cameraYaw: frame.cameraYaw,
       jump,
+      jumpRelease,
       restart,
     }
     sim.step(stepInput)

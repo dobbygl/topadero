@@ -49,6 +49,9 @@ export class Input {
 
   private onKeyUp = (e: KeyboardEvent): void => {
     this.keys.delete(e.code)
+    // Flanco de SOLTADO del salto (US2): mismo tratamiento que el de pulsado; el corte del salto
+    // variable se ventanea al sim-step de su timestamp → independiente de los FPS.
+    if (e.code === 'Space') this.edges.push({ kind: 'jumpRelease', timestamp: e.timeStamp / 1000 })
   }
 
   getFrameInput(): FrameInput {

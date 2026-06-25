@@ -12,11 +12,16 @@ export interface Player {
   collider: RAPIER.Collider
   controller: RAPIER.KinematicCharacterController
   verticalVelocity: number
+  velX: number // velocidad horizontal con rampa en X (US3; entrada, no empuje)
+  velZ: number // velocidad horizontal con rampa en Z (US3)
   knockbackX: number
   knockbackZ: number
   isGrounded: boolean
   facingYaw: number
   timeSinceGrounded: number
+  jumpBufferRemaining: number // s de buffer de salto vigente (US1; tiempo de sim, no fotogramas)
+  jumpAscending: boolean // en la fase de ascenso de un salto propio (US2): gobierna corte y gravedad
+  jumpHeld: boolean // el botón de salto sigue mantenido (derivado de flancos pulsar/soltar, US2)
 }
 
 export function createPlayer(world: RAPIER.World, config: Config, spawn: Vec3): Player {
@@ -38,11 +43,16 @@ export function createPlayer(world: RAPIER.World, config: Config, spawn: Vec3): 
     collider,
     controller,
     verticalVelocity: 0,
+    velX: 0,
+    velZ: 0,
     knockbackX: 0,
     knockbackZ: 0,
     isGrounded: false,
     facingYaw: Math.PI, // mirando a -Z
     timeSinceGrounded: Infinity,
+    jumpBufferRemaining: 0,
+    jumpAscending: false,
+    jumpHeld: false,
   }
 }
 
@@ -67,23 +77,70 @@ export function stepPlayer(
   let mx = input.moveAxis.y * -sin + input.moveAxis.x * cos
   let mz = input.moveAxis.y * -cos + input.moveAxis.x * -sin
   const mlen = Math.hypot(mx, mz)
-  if (mlen > 1e-6) {
+  const hasInput = mlen > 1e-6
+  if (hasInput) {
     mx /= mlen
     mz /= mlen
     player.facingYaw = Math.atan2(mx, mz)
   }
-  const moveX = mx * config.moveSpeed
-  const moveZ = mz * config.moveSpeed
-
-  // --- Salto (solo apoyado o dentro de coyote time; sin doble salto) ---
-  const canJump = player.isGrounded || (player.timeSinceGrounded < config.coyoteTime && player.verticalVelocity <= 0)
-  if (input.jump && canJump) {
-    player.verticalVelocity = config.jumpSpeed
-    player.timeSinceGrounded = Infinity // impide re-salto hasta volver a tocar suelo
+  // Velocidad objetivo desde el input; la velocidad real se aproxima con rampa (US3, R5).
+  const tgtX = hasInput ? mx * config.moveSpeed : 0
+  const tgtZ = hasInput ? mz * config.moveSpeed : 0
+  // Tasa de aproximación por estado: suelo accel/decel; aire control; aire sin input conserva
+  // la velocidad (momento, no rígido). El empuje del obstáculo va aparte (no entra en la rampa).
+  const rate = player.isGrounded ? (hasInput ? config.groundAccel : config.groundDecel) : hasInput ? config.airAccel : 0
+  const dvx = tgtX - player.velX
+  const dvz = tgtZ - player.velZ
+  const dlen = Math.hypot(dvx, dvz)
+  const maxStep = rate * dt
+  if (dlen <= maxStep || dlen < 1e-9) {
+    player.velX = tgtX
+    player.velZ = tgtZ
+  } else {
+    player.velX += (dvx / dlen) * maxStep
+    player.velZ += (dvz / dlen) * maxStep
   }
 
-  // --- Gravedad ---
-  player.verticalVelocity += config.gravity.y * dt
+  // --- Salto: buffering (US1) + altura variable y soltado (US2); coyote; sin doble salto ---
+  // El flanco de salto se RECUERDA en una ventana de tiempo de sim (jumpBufferTime): un flanco
+  // recién llegado arma el buffer; en cuanto el personaje queda apoyado (o dentro de coyote) con
+  // buffer vigente, salta. Una pulsación cuya ventana caduca antes de aterrizar no se ejecuta.
+  if (input.jump) {
+    player.jumpBufferRemaining = config.jumpBufferTime
+    player.jumpHeld = true
+  }
+  const canJump = player.isGrounded || (player.timeSinceGrounded < config.coyoteTime && player.verticalVelocity <= 0)
+  if (player.jumpBufferRemaining > 0 && canJump) {
+    // Lanzar a la altura MÁXIMA (jumpSpeed); el soltado la recorta (orden: lanzar antes de cortar).
+    player.verticalVelocity = config.jumpSpeed
+    player.jumpAscending = true
+    player.timeSinceGrounded = Infinity // impide re-salto hasta volver a tocar suelo
+    player.jumpBufferRemaining = 0
+    // R4: un salto bufferizado cuyo botón ya se soltó nace recortado al suelo mínimo.
+    if (!player.jumpHeld) {
+      player.verticalVelocity = Math.min(player.verticalVelocity, config.jumpReleaseVelocity)
+      player.jumpAscending = false
+    }
+  } else if (player.jumpBufferRemaining > 0) {
+    // envejecer el buffer (en tiempo de sim) si no se ha podido consumir este paso
+    player.jumpBufferRemaining = Math.max(0, player.jumpBufferRemaining - dt)
+  }
+  // R3: soltar en pleno ascenso corta la subida al suelo mínimo (mismo sim-step que el flanco).
+  if (input.jumpRelease) {
+    player.jumpHeld = false
+    if (player.jumpAscending && player.verticalVelocity > 0) {
+      player.verticalVelocity = Math.min(player.verticalVelocity, config.jumpReleaseVelocity)
+      player.jumpAscending = false
+    }
+  }
+
+  // --- Gravedad asimétrica (US2, R6): más fuerte al caer; más fuerte al subir ya soltado ---
+  let gMult = 1
+  if (player.verticalVelocity < 0) gMult = config.fallGravityMult
+  else if (player.verticalVelocity > 0 && !player.jumpAscending) gMult = config.lowJumpGravityMult
+  player.verticalVelocity += config.gravity.y * gMult * dt
+  // Pasado el ápice deja de ser ascenso (a partir de aquí cae con fallGravityMult).
+  if (player.verticalVelocity <= 0) player.jumpAscending = false
 
   // Mientras sube, desactivar snap-to-ground para que no anule el impulso del salto (research R3)
   if (player.verticalVelocity > 0) {
@@ -95,9 +152,9 @@ export function stepPlayer(
   // --- Desplazamiento deseado = (input + empuje) horizontal + vertical + transporte portante ---
   // El carryDelta NO se multiplica por dt: ya es un desplazamiento en metros (pose(t+dt)-pose(t)).
   const desired = {
-    x: (moveX + player.knockbackX) * dt + carryDelta.x,
+    x: (player.velX + player.knockbackX) * dt + carryDelta.x,
     y: player.verticalVelocity * dt,
-    z: (moveZ + player.knockbackZ) * dt + carryDelta.z,
+    z: (player.velZ + player.knockbackZ) * dt + carryDelta.z,
   }
 
   // Move-and-slide del KCC: barrido contra la geometría (no atravesar / deslizar).
@@ -131,10 +188,14 @@ export function stepPlayer(
 export function respawnPlayer(player: Player, spawn: Vec3): void {
   player.body.setTranslation({ x: spawn.x, y: spawn.y, z: spawn.z }, true)
   player.verticalVelocity = 0
+  player.velX = 0
+  player.velZ = 0
   player.knockbackX = 0
   player.knockbackZ = 0
   player.timeSinceGrounded = Infinity
   player.isGrounded = false
+  player.jumpBufferRemaining = 0
+  player.jumpAscending = false
 }
 
 export function readPlayerState(player: Player): PlayerStateView {
@@ -144,6 +205,7 @@ export function readPlayerState(player: Player): PlayerStateView {
     facingYaw: player.facingYaw,
     velocity: { x: player.knockbackX, y: player.verticalVelocity, z: player.knockbackZ },
     verticalVelocity: player.verticalVelocity,
+    horizontalVelocity: { x: player.velX, z: player.velZ },
     isGrounded: player.isGrounded,
   }
 }
