@@ -173,7 +173,7 @@ controles táctiles cómodos (quickstart US3).
 
 - [ ] T029 [P] Comprobar el rendimiento en móvil de gama media: >= 30 FPS estable con táctil + overlay
   (SC-005).
-- [ ] T030 Comprobar la frontera: `src/sim/` no importa `src/input`, `src/ui`, la capa PWA ni carga
+- [X] T030 Comprobar la frontera: `src/sim/` no importa `src/input`, `src/ui`, la capa PWA ni carga
   assets (Principio III).
 - [ ] T031 Ejecutar la validación completa de `quickstart.md` (US1, US4, US2, US3 + puerta de determinismo).
 - [ ] T032 [P] (opcional) Nota breve en docs/README sobre mando/táctil/PWA (el reencuadre de README
