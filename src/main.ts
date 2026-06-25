@@ -13,6 +13,8 @@ import { Input } from './input/input'
 import { Hud } from './ui/hud'
 import { Simulation } from './sim/simulation'
 import { registerServiceWorker } from './pwa/install'
+import { AudioManager } from './audio/audio'
+import { detectAudioEvents, snapshotOf, type AudioSnapshot } from './audio/events'
 
 async function main(): Promise<void> {
   registerServiceWorker() // PWA (004 · US4): offline tras la primera carga; no toca el paso fijo.
@@ -33,10 +35,23 @@ async function main(): Promise<void> {
   const input = new Input(view.renderer.domElement)
   const loop = createLoopState()
 
+  // Audio (005): vista de render fuera del paso fijo. Detecta eventos del estado y los reproduce.
+  const audio = new AudioManager()
+  audio.init()
+  void audio.preload() // no bloquea el arranque; degrada en silencio si falla
+  const audioThresholds = {
+    jumpVy: config.audio.jumpVyThreshold,
+    hitKnockback: config.audio.hitKnockbackThreshold,
+    respawnDist: config.audio.respawnDistThreshold,
+  }
+  let prevSnap: AudioSnapshot | null = null
+
   const clickToPlay = document.getElementById('click-to-play') as HTMLElement
   clickToPlay.addEventListener('click', () => {
     clickToPlay.classList.add('hidden')
     input.requestLock()
+    audio.resume() // autoplay: el audio arranca con la primera interacción
+    audio.startMusic()
   })
   // Modo captura (?shot): oculta el overlay para screenshots limpios del escenario.
   if (new URLSearchParams(location.search).has('shot')) clickToPlay.classList.add('hidden')
@@ -50,7 +65,10 @@ async function main(): Promise<void> {
   // en el StepInput determinista (getFrameInput ignora 'KeyB'), así que no afecta a la simulación.
   let debug = new URLSearchParams(location.search).has('debug') // ?debug arranca el overlay (capturas)
   window.addEventListener('keydown', (e) => {
+    audio.resume() // primera interacción por teclado: arranca el audio
+    audio.startMusic()
     if (e.code === 'KeyB') debug = !debug
+    else if (e.code === config.audio.muteKey) audio.toggleMuted()
   })
 
   // Cámara de inspección (?look=<z>): enfoca un punto del circuito desde un 3/4. Solo dev/capturas.
@@ -65,6 +83,11 @@ async function main(): Promise<void> {
     advance(sim, loop, nowMs / 1000, input.getFrameInput(nowMs / 1000))
 
     const ps = sim.getPlayerState()
+    const run = sim.getRunState()
+    // Audio: detectar eventos por transiciones del estado muestreado (no toca la simulación).
+    const snap = snapshotOf(ps, run)
+    for (const ev of detectAudioEvents(prevSnap, snap, audioThresholds)) audio.play(ev)
+    prevSnap = snap
     camera.update(ps.position, input.yaw, input.pitch, dtRender)
     if (lookZ !== null) {
       if (new URLSearchParams(location.search).has('top')) {
@@ -84,7 +107,7 @@ async function main(): Promise<void> {
     )
     view.updatePlayerAnimation(ps.isGrounded, dtRender)
     view.setDebug(debug ? sim.getDebugRender() : null)
-    hud.update(sim.getRunState(), input.activeScheme)
+    hud.update(run, input.activeScheme)
     view.render(camera.camera)
     requestAnimationFrame(frame)
   }
