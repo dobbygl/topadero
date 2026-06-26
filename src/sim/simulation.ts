@@ -287,6 +287,17 @@ export class Simulation {
     return z
   }
 
+  /**
+   * Reinicia el intento (mismo circuito) a su estado inicial determinista, desde el host/shell
+   * (007). Es exactamente el `reset()` que ya dispara el flanco `restart` dentro de `step()`, pero
+   * invocable directamente: un intento nuevo re-ancla el bucle (`createLoopState`) y el flanco
+   * `restart` no llegaría a consumirse (su ventana queda en el pasado del ancla nuevo). NO altera
+   * `step()` ni el determinismo (Principio II): la puerta de determinismo prueba `step()`, intacto.
+   */
+  restart(): void {
+    this.reset()
+  }
+
   // --- Lecturas de solo lectura (para las vistas) ---
   getPlayerState(): PlayerStateView {
     return readPlayerState(this.player)

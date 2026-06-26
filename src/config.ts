@@ -113,6 +113,13 @@ export const config = {
     bestMarkKeyPrefix: 'topadero.best.', // localStorage: mejor marca por día/circuito
   },
 
+  // --- Ajustes del jugador (007; shell). Defaults aquí (Principio V); el valor ACTUAL elegido en
+  // el panel se persiste en localStorage (FR-019a) reusando los volúmenes de `audio` y la
+  // sensibilidad de `input/preferences`. El interruptor de debug de físicas NO se persiste. ---
+  settings: {
+    storageKey: 'topadero.settings.v1', // localStorage: preferencias de jugador (volúmenes + entrada)
+  },
+
   // --- Cañón que apunta y dispara (prototipo; subsistema reactivo en sim/cannon.ts). Determinista:
   // todo se consume en el paso fijo. Por ahora solo se usa en la escena debug (circuito real sin
   // cañones → inerte). El impacto del proyectil reutiliza el knockback (cap knockbackMax). ---
