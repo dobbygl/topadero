@@ -3,18 +3,19 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 <!-- SPECKIT START -->
-Active feature: 006-circuito-diario-btc (Topadero: circuito diario procedural anclado al hash de un bloque de Bitcoin; generación determinista, lectura de red de solo lectura con degradación offline — constitución v2.2.0).
+Active feature: 007-game-shell (Topadero: shell de juego jugable de extremo a extremo —título, pausa, resultados/victoria y ajustes— que envuelve el circuito diario; pausa determinista fuera del paso fijo; preferencias persistidas en local — constitución v2.2.0, Principio VI).
 Stack: TypeScript + Vite + Three.js + @dimforge/rapier3d-compat (físicas WASM).
 Arquitectura: núcleo de simulación headless (src/sim/) con paso de tiempo fijo
-(acumulador) desacoplado del render; Three.js, HUD y cámara son vistas puras;
+(acumulador) desacoplado del render; Three.js, HUD, shell y cámara son vistas puras;
 todo el ajuste centralizado en src/config.ts. El arte decorativo (mallas low-poly +
 texturas, excepción v1.1.0) vive solo en src/render, alineado a colliders primitivos,
 nunca como geometría de colisión. Puerta automática no negociable: test de
-determinismo / independencia de FPS (Principio II de la constitución).
+determinismo / independencia de FPS (Principio II de la constitución); la pausa se
+implementa fuera de advance()/src/sim para no tocarla.
 
 For technologies, project structure, shell commands and other context, read the
-current plan: specs/006-circuito-diario-btc/plan.md
-(spec: specs/006-circuito-diario-btc/spec.md ·
+current plan: specs/007-game-shell/plan.md
+(spec: specs/007-game-shell/spec.md ·
 constitución: .specify/memory/constitution.md)
 <!-- SPECKIT END -->
 
