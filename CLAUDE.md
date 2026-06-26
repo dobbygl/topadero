@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 <!-- SPECKIT START -->
-Active feature: 005-audio (Topadero: audio, efectos de sonido y música).
+Active feature: 006-circuito-diario-btc (Topadero: circuito diario procedural anclado al hash de un bloque de Bitcoin; generación determinista, lectura de red de solo lectura con degradación offline — constitución v2.2.0).
 Stack: TypeScript + Vite + Three.js + @dimforge/rapier3d-compat (físicas WASM).
 Arquitectura: núcleo de simulación headless (src/sim/) con paso de tiempo fijo
 (acumulador) desacoplado del render; Three.js, HUD y cámara son vistas puras;
@@ -13,8 +13,8 @@ nunca como geometría de colisión. Puerta automática no negociable: test de
 determinismo / independencia de FPS (Principio II de la constitución).
 
 For technologies, project structure, shell commands and other context, read the
-current plan: specs/005-audio/plan.md
-(spec: specs/005-audio/spec.md ·
+current plan: specs/006-circuito-diario-btc/plan.md
+(spec: specs/006-circuito-diario-btc/spec.md ·
 constitución: .specify/memory/constitution.md)
 <!-- SPECKIT END -->
 
@@ -65,9 +65,11 @@ La frontera que organiza todo separa la **simulación** del **render/E-S**:
 - **Alcance de producto (Principio III, v2.0.0).** La geometría de simulación y **colisión** usa
   solo primitivas (cápsulas, cajas, cilindros). Tras el pivote a juego publicable, **están en
   alcance**: audio, shell de juego (título/pausa/victoria/ajustes), persistencia **local** (mejor
-  marca y preferencias), varios circuitos y progresión básica. **Siguen fuera**: multijugador o
-  red, cualquier backend o persistencia en servidor, y la colisión por mallas (collmesh); salirse
-  de ahí exige enmendar antes spec y constitución. **Frontera headless:** `src/sim/` no importa
+  marca y preferencias), varios circuitos y progresión básica, y (v2.2.0) una **lectura de red de
+  solo lectura** a una fuente pública de baliza/aleatoriedad con degradación offline obligatoria.
+  **Siguen fuera**: multijugador o red entre jugadores, backend propio o persistencia en servidor,
+  ranking/envío de marcas online, y la colisión por mallas (collmesh); salirse de ahí exige enmendar
+  antes spec y constitución. **Frontera headless:** `src/sim/` no importa
   render, audio, UI ni persistencia, ni carga assets; esas capas son vistas puras que leen el
   estado de la simulación. **Arte/animación (v1.1.0 + v1.2.0):** mallas low-poly + texturas y
   animación esqueletal del personaje en `src/render`, alineadas al collider, **nunca** geometría
