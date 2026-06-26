@@ -39,6 +39,27 @@ tests del generador van aparte; esto es la prueba de juego.
 4. **UI**: con el modo diario activo, se ve la **cuenta atrás** al próximo 00:00 UTC y la **mejor
    marca local** del día.
 
+## Verificación reproducible (US2, procedimiento)
+
+Cualquiera puede reproducir el circuito del día con el código open source:
+
+1. En el HUD diario, lee la **procedencia**: fecha UTC, altura y **hash** del bloque, y **versión del generador**.
+2. Deriva el seed y genera con esos datos (mismo pipeline que el juego):
+   ```ts
+   import { config } from './src/config'
+   import { seedFromHash } from './src/circuitgen/seed'
+   import { generateCircuit } from './src/circuitgen/generate'
+   import { structuralHash } from './src/circuitgen/hash'
+
+   const seed = await seedFromHash('<hash del bloque publicado>', config.circuitgen.varietySalt)
+   const circuit = generateCircuit(seed, config.circuitgen) // usar config.circuitgen de la versión publicada
+   console.log(await structuralHash(circuit)) // debe coincidir con el structuralHash del juego
+   ```
+3. Si el `structuralHash` coincide, el circuito es el del día (no amañado). Un hash distinto no coincide.
+
+> El test `reproducibility.test.ts` fija un **vector golden** (hash conocido + versión → structuralHash),
+> así que un cambio del generador sin subir `generatorVersion` se detecta en CI.
+
 ## Puertas que deben seguir verdes
 
 - `npx vitest run tests/determinism.test.ts` → en verde (`src/sim/` no se tocó), a 30/60/144 Hz (SC-007).

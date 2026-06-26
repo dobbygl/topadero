@@ -81,6 +81,37 @@ export const config = {
     respawnDistThreshold: 5, // m de salto de posición en un fotograma = reaparición
   },
 
+  // --- Generación de circuito diario (006; bloque CONGELADO versionado). El generador
+  // (src/circuitgen/) lee ESTO, NO las perillas de feel vivas: afinar el feel no cambia circuitos
+  // pasados. Si cambias CUALQUIER constante de aquí, SUBE generatorVersion (reproducibilidad
+  // histórica, FR-012). El `envelope` se inicializa a los valores de feel vivos ACTUALES; mantenerlo
+  // alineado (si el salto real diverge, subir versión, T026). Fuera del paso fijo; no afecta al sim. ---
+  circuitgen: {
+    generatorVersion: '1.0.0',
+    varietySalt: '', // sal opcional concatenada antes del SHA-256 del hash; cambiarla = subir versión
+    grid: 0.5, // m; toda posición/medida = entero·grid (exacto en float64 → mismo circuito en todo dispositivo)
+    segmentsRange: { min: 8, max: 14 }, // nº de plataformas (suelo de variedad)
+    gapRange: { min: 3, max: 7 }, // m de hueco entre plataformas (se acota por el envoltorio si hace falta)
+    platformHalfWidthRange: { min: 1.5, max: 3 }, // semiancho X de plataforma (m)
+    platformHalfDepth: 3, // semiprofundidad Z de plataforma (m)
+    obstacleChance: { num: 3, den: 5 }, // prob. de obstáculo por segmento intermedio (num/den)
+    minObstacles: 3, // suelo mínimo de obstáculos (evita trazado trivial)
+    obstacleMix: { oscillate: 3, rotateBar: 3, pendulum: 2, pusher: 2, carry: 1 }, // pesos del catálogo 001/002
+    reachMargin: 0.85, // fracción del envoltorio exigible soluble (margen de seguridad)
+    // Envoltorio de salto CONGELADO (= valores de feel vivos actuales; T026 obliga a subir versión si divergen):
+    envelope: { gravityY: -22, jumpSpeed: 9, moveSpeed: 7 },
+  },
+
+  // --- Circuito diario: resolución de baliza (006; red de SOLO LECTURA, fuera del paso fijo,
+  // con degradación offline; constitución v2.2.0). Ajuste centralizado (Principio V). ---
+  daily: {
+    providers: ['https://mempool.space/api', 'https://blockstream.info/api'], // principal + alternativa (Esplora)
+    confirmations: 3, // finalidad frente a reorg
+    clockSanityToleranceMs: 2 * 60 * 60 * 1000, // 2 h: si el reloj local diverge más de esto, preferir el día de la cadena
+    cacheKeyPrefix: 'topadero.daily.', // localStorage: circuito resuelto por día UTC
+    bestMarkKeyPrefix: 'topadero.best.', // localStorage: mejor marca por día/circuito
+  },
+
   // --- Obstáculo móvil ---
   obstacleAmplitude: 4.5, // m de vaivén (eje X)
   obstacleSpeed: 1.6, // rad/s de la fase senoidal
