@@ -107,6 +107,7 @@ export const config = {
   daily: {
     providers: ['https://mempool.space/api', 'https://blockstream.info/api'], // principal + alternativa (Esplora)
     confirmations: 3, // finalidad frente a reorg
+    resolveDeadlineMs: 6000, // tope GLOBAL de resolución de baliza; si se excede → offline (arranque sin esperas largas)
     clockSanityToleranceMs: 2 * 60 * 60 * 1000, // 2 h: si el reloj local diverge más de esto, preferir el día de la cadena
     cacheKeyPrefix: 'topadero.daily.', // localStorage: circuito resuelto por día UTC
     bestMarkKeyPrefix: 'topadero.best.', // localStorage: mejor marca por día/circuito

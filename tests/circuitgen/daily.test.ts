@@ -2,8 +2,9 @@
 // Inyecta fuentes simuladas (sin red real). En Node no hay localStorage → el caché degrada a no-op,
 // así que cada caso se evalúa aislado.
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { resolveDailyCircuit } from '../../src/daily/daily'
+import { config } from '../../src/config'
 import type { BlockSource } from '../../src/daily/beacon'
 
 const MIDNIGHT = Date.UTC(2026, 5, 26, 0, 0, 0) / 1000 // 00:00 UTC 2026-06-26
@@ -36,5 +37,23 @@ describe('orquestación diaria: cascada y offline', () => {
     expect(d.competitive).toBe(false)
     expect(d.provenance).toBeNull()
     expect(d.circuit.statics.length).toBeGreaterThan(0)
+  })
+
+  it('red muy lenta (deadline global excedido) → offline sin esperar timeouts encadenados', async () => {
+    vi.useFakeTimers()
+    try {
+      const hanging: BlockSource = {
+        getTip: () => new Promise(() => {}), // nunca resuelve
+        getBlockAtHeight: () => new Promise(() => {}),
+      }
+      const p = resolveDailyCircuit(NOW_MS, { sources: [hanging], sourceNames: ['lento'] })
+      await vi.advanceTimersByTimeAsync(config.daily.resolveDeadlineMs + 1000)
+      const d = await p
+      expect(d.competitive).toBe(false)
+      expect(d.provenance).toBeNull()
+      expect(d.circuit.statics.length).toBeGreaterThan(0)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

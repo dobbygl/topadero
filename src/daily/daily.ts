@@ -78,6 +78,38 @@ function cachedCompetitive(dayUTC: string): DailyCircuit | null {
 }
 
 /**
+ * Ejecuta `fn` con un tope de tiempo TOTAL. Si tarda más de `ms`, resuelve `null` (el llamante cae a
+ * offline); si `fn` termina antes, limpia el temporizador. Un error de `fn` también resuelve `null`.
+ */
+function withDeadline<T>(ms: number, fn: () => Promise<T>): Promise<T | null> {
+  return new Promise<T | null>((resolve) => {
+    let settled = false
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true
+        resolve(null)
+      }
+    }, ms)
+    fn().then(
+      (v) => {
+        if (!settled) {
+          settled = true
+          clearTimeout(timer)
+          resolve(v)
+        }
+      },
+      () => {
+        if (!settled) {
+          settled = true
+          clearTimeout(timer)
+          resolve(null)
+        }
+      },
+    )
+  })
+}
+
+/**
  * Resuelve el circuito del día. `nowMs` = reloj local (Date.now()); inyectable en tests.
  */
 export async function resolveDailyCircuit(nowMs: number, opts: ResolveOptions = {}): Promise<DailyCircuit> {
@@ -89,19 +121,22 @@ export async function resolveDailyCircuit(nowMs: number, opts: ResolveOptions = 
   const hit = cachedCompetitive(localDay)
   if (hit) return hit
 
-  // 2) Red: obtener la punta de algún proveedor (esto cruza el chequeo de cordura del reloj).
+  // 2) Resolución por red con DEADLINE GLOBAL: si tarda más de `resolveDeadlineMs` (red muy lenta),
+  //    se cae a offline en vez de encadenar los timeouts por-fetch (Principio VI / FR-009).
   const { sources, names } = opts.sources ? { sources: opts.sources, names: opts.sourceNames ?? opts.sources.map((_, i) => `src${i}`) } : defaultSources()
-  let tip: BlockInfo | null = null
-  for (const s of sources) {
-    try {
-      tip = await s.getTip()
-      break
-    } catch {
-      /* probar siguiente proveedor */
-    }
-  }
 
-  if (tip) {
+  const resolveOverNetwork = async (): Promise<DailyCircuit> => {
+    let tip: BlockInfo | null = null
+    for (const s of sources) {
+      try {
+        tip = await s.getTip()
+        break
+      } catch {
+        /* probar siguiente proveedor */
+      }
+    }
+    if (!tip) return offlineFor(localDay) // sin red
+
     // Día = calendario local salvo que el reloj diverja groseramente de la cadena → preferir la cadena.
     const day = Math.abs(localNowSec - tip.timestamp) <= tolSec ? localDay : utcDay(tip.timestamp)
     if (day !== localDay) {
@@ -122,12 +157,12 @@ export async function resolveDailyCircuit(nowMs: number, opts: ResolveOptions = 
         /* probar siguiente proveedor (cascada, FR-010) */
       }
     }
-    // 3a) Hay red pero aún no hay ancla (ventana de medianoche / día futuro): offline-práctica.
-    return offlineFor(day)
+    return offlineFor(day) // hay red pero aún no hay ancla (ventana de medianoche / día futuro)
   }
 
-  // 3b) Sin red: offline-práctica para el día del reloj local.
-  return offlineFor(localDay)
+  // Si el deadline se excede (o la red falla por debajo), offline para el día del reloj local.
+  const result = await withDeadline(config.daily.resolveDeadlineMs, resolveOverNetwork)
+  return result ?? offlineFor(localDay)
 }
 
 /** Circuito offline (no competitivo) con seed local de la fecha; cacheado solo si no hay competitivo. */
