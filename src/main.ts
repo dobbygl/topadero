@@ -4,6 +4,7 @@
 
 import * as RAPIER from '@dimforge/rapier3d-compat'
 import { config } from './config'
+import type { CircuitDefinition } from './circuit'
 import { advance, createLoopState } from './core/gameLoop'
 import { quatFromYaw } from './types'
 import { FollowCamera } from './render/followCamera'
@@ -15,16 +16,56 @@ import { Simulation } from './sim/simulation'
 import { registerServiceWorker } from './pwa/install'
 import { AudioManager } from './audio/audio'
 import { detectAudioEvents, snapshotOf, type AudioSnapshot } from './audio/events'
+import { resolveDailyCircuit, loadBest, recordBest, type DailyCircuit } from './daily/daily'
+import { DailyHud } from './ui/dailyHud'
 
 async function main(): Promise<void> {
   registerServiceWorker() // PWA (004 · US4): offline tras la primera carga; no toca el paso fijo.
   await RAPIER.init()
 
-  const sim = Simulation.create()
+  // Sandbox (DEV-ONLY): la ruta #/sandbox/<name> carga una escena de prueba y TIENE PRELACIÓN sobre el
+  // circuito diario (para probar/afinar elementos aislados). En producción import.meta.env.DEV es false
+  // → Vite elimina este bloque y el import dinámico; src/sandbox/ no entra en el build ni las rutas.
+  let circuitDef: CircuitDefinition | undefined
+  if (import.meta.env.DEV) {
+    const m = location.hash.match(/^#\/sandbox(?:\/([\w-]+))?/)
+    if (m) {
+      const { getSandboxScene, listSandboxScenes, indexScene } = await import('./sandbox')
+      const name = m[1] ?? ''
+      const found = name ? getSandboxScene(name) : indexScene
+      if (name && !found) console.warn(`Sandbox desconocido: ${name}`)
+      const scene = found ?? indexScene
+      circuitDef = scene.circuit
+      // Panel de depuración (índice de escenas + sliders en vivo) y recarga al cambiar de escena.
+      const { SandboxPanel } = await import('./ui/sandboxPanel')
+      new SandboxPanel(document.body, listSandboxScenes(), scene)
+      window.addEventListener('hashchange', () => location.reload())
+    }
+  }
+
+  // Circuito diario (006): si NO hay sandbox, resolver el circuito del día (baliza fuera del paso fijo,
+  // FR-006). Degradación: si falla, se cae al circuito fijo para no dejar pantalla en blanco (Principio VI).
+  let daily: DailyCircuit | null = null
+  if (!circuitDef) {
+    try {
+      daily = await resolveDailyCircuit(Date.now())
+    } catch (e: unknown) {
+      console.warn('Circuito diario no resuelto; uso el circuito fijo:', e)
+    }
+  }
+
+  const sim = circuitDef
+    ? Simulation.create(config, circuitDef)
+    : daily
+      ? Simulation.create(config, daily.circuit)
+      : Simulation.create()
+  const hasCannons = sim.getCannonViews().length > 0
   // Carga de assets ANTES de jugar: ninguna latencia entra en el paso fijo (FR-016).
   const assets = await loadAssets(sim.getCircuitDefinition())
   const app = document.getElementById('app') as HTMLElement
-  const view = new SceneView(app, sim.getCircuitDefinition(), assets)
+  // Decoración del circuito fijo (portal de meta, pedestal del cañón, globos…) SOLO con el circuito
+  // fijo: el sandbox y el circuito diario tienen otro layout, así que esos props ahí estorban.
+  const view = new SceneView(app, sim.getCircuitDefinition(), assets, { decor: !circuitDef && !daily })
   view.resize()
 
   const camera = new FollowCamera(view.aspect)
@@ -32,6 +73,9 @@ async function main(): Promise<void> {
   camera.reducedMotion =
     config.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const hud = new Hud(document.getElementById('hud') as HTMLElement)
+  // HUD del circuito diario (006 · US2/US3): procedencia + cuenta atrás + mejor marca. Solo vista.
+  const dailyHud = daily ? new DailyHud(document.body, daily, loadBest(daily.dayUTC, daily.structuralHash)) : null
+  let bestRecorded = false
   const input = new Input(view.renderer.domElement)
   const loop = createLoopState()
 
@@ -84,6 +128,18 @@ async function main(): Promise<void> {
 
     const ps = sim.getPlayerState()
     const run = sim.getRunState()
+    // Circuito diario (006): cuenta atrás siempre; al GANAR, registra la mejor marca local del día.
+    if (dailyHud && daily) {
+      dailyHud.updateCountdown(Date.now())
+      if (run.phase === 'won') {
+        if (!bestRecorded) {
+          bestRecorded = true
+          dailyHud.setBest(recordBest(daily, Math.round(run.elapsedSimTime * 1000)))
+        }
+      } else {
+        bestRecorded = false // re-armar para el siguiente intento (R reinicia)
+      }
+    }
     // Audio: detectar eventos por transiciones del estado muestreado (no toca la simulación).
     const snap = snapshotOf(ps, run)
     for (const ev of detectAudioEvents(prevSnap, snap, audioThresholds)) audio.play(ev)
@@ -105,6 +161,7 @@ async function main(): Promise<void> {
       sim.getObstacleTransforms(),
       loop.alpha,
     )
+    if (hasCannons) view.updateCannons(sim.getCannonViews(), sim.getProjectiles())
     view.updatePlayerAnimation(ps.isGrounded, dtRender)
     view.setDebug(debug ? sim.getDebugRender() : null)
     hud.update(run, input.activeScheme)

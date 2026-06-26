@@ -102,6 +102,10 @@ export async function loadAssets(circuit: CircuitDefinition): Promise<AssetCatal
 
   const meshUrls = new Set<string>([MASCOT_MESH_URL, BALLOON_MESH_URL, PINWHEEL_MESH_URL])
   for (const o of circuit.obstacles) if (o.meshUrl) meshUrls.add(o.meshUrl)
+  for (const c of circuit.cannons ?? []) {
+    if (c.baseMeshUrl) meshUrls.add(c.baseMeshUrl)
+    if (c.barrelMeshUrl) meshUrls.add(c.barrelMeshUrl)
+  }
 
   await Promise.all([
     ...[...texUrls].map((u) => loadTexture(texLoader, u, catalog)),

@@ -133,6 +133,20 @@ function miniCircuit(obstacle: ObstacleDef, spawn: Vec3, statics: StaticBox[]): 
 }
 const STILL = { moveAxis: { x: 0, y: 0 }, cameraYaw: 0, edges: [] }
 
+// Circuito mínimo con un cañón (subsistema reactivo): suelo amplio + cañón que ya apunta al jugador.
+function cannonCircuit(cannonBase: Vec3, spawn: Vec3, statics: StaticBox[]): CircuitDefinition {
+  return {
+    spawn,
+    statics,
+    obstacles: [],
+    cannons: [{ id: 'cannon', base: cannonBase, color: 0 }],
+    zones: [
+      { kind: 'start', center: { x: 0, y: 0, z: 0 }, halfExtents: { x: 1, y: 0.1, z: 1 }, color: 0 },
+      { kind: 'finish', center: { x: 0, y: -500, z: 9999 }, halfExtents: { x: 1, y: 1, z: 1 }, color: 0 },
+    ],
+  }
+}
+
 describe('Principio II — determinismo / independencia de FPS', () => {
   it('US1: salto cerca de una frontera de subpaso → idéntico a 60/jitter/30/144 Hz', () => {
     // Flanco de salto situado a 0.3·DT dentro de la ventana del paso 30 (t ≈ 0.5 s).
@@ -342,5 +356,16 @@ describe('Principio II — determinismo / independencia de FPS', () => {
         expect(velocity(def, t, config)).toEqual(velocity(def, t, config))
       }
     }
+  })
+
+  it('cañón (prototipo): apunta y dispara → idéntico entre cadencias y empuja al jugador', () => {
+    // Cañón en +Z que ya apunta al jugador (-Z por defecto): dispara, el proyectil viaja y golpea.
+    // El efecto (knockback → posición/velocidad) entra en el vector canónico, así que la igualdad
+    // entre cadencias cubre el determinismo del apuntado/disparo/proyectil (sub-pasos incluidos).
+    const c = cannonCircuit({ x: 0, y: 1.9, z: 5 }, { x: 0, y: 1.9, z: 0 }, flatGround(1.0))
+    const scn = { ...STILL, durationSec: 120 * DT }
+    expectIdenticalAcrossCadences(scn, c)
+    const r = runScenario(scn, CADENCES['60hz'], c)
+    expect(Math.hypot(r.nums[0], r.nums[2]), 'el proyectil del cañón debe empujar al jugador').toBeGreaterThan(0.2)
   })
 })

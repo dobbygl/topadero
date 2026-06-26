@@ -77,12 +77,30 @@ export interface CarryDef extends ObstacleDefBase {
 }
 export type ObstacleDef = OscillateDef | RotateBarDef | PendulumDef | PusherDef | CarryDef
 
+/**
+ * Cañón que apunta dinámicamente al jugador y dispara (prototipo). NO es un ObstacleDef (que es
+ * función pura del tiempo): es reactivo y con estado, así que va aparte. Su lógica determinista
+ * vive en sim/cannon.ts y sus magnitudes en config.ts (cannon). `base` es el pivote del cañón.
+ */
+export interface CannonDef {
+  id: string
+  base: Vec3
+  color: number
+  /** VISUAL-ONLY: torreta articulada en dos piezas. sim/ las ignora; el render monta el pedestal
+   *  ESTÁTICO con `baseMeshUrl` y el tubo orientable (apunta al jugador) con `barrelMeshUrl`. Si
+   *  falta cualquiera de las dos, cae a las primitivas de config.cannon. Las usa el sandbox. */
+  baseMeshUrl?: string
+  barrelMeshUrl?: string
+}
+
 export interface CircuitDefinition {
   /** Pose de aparición / respawn (centro de la cápsula). */
   spawn: Vec3
   statics: StaticBox[]
   /** Obstáculos móviles (función pura del tiempo de sim por tipo). */
   obstacles: ObstacleDef[]
+  /** Cañones reactivos (apuntan al jugador y disparan). Opcional; el circuito real no los usa. */
+  cannons?: CannonDef[]
   zones: ZoneDef[]
   /** VISUAL-ONLY: dirección de arte; sim/ lo ignora. */
   theme?: CircuitTheme

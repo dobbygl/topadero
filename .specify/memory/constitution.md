@@ -1,40 +1,44 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 2.0.0 -> 2.1.0
+Version change: 2.1.0 -> 2.2.0
 Ratification: 2026-06-24 (sin cambios)
 Amendment date: 2026-06-25
-Bump rationale: MINOR. Amplía materialmente una guía de la sección "Restricciones técnicas y de
-plataforma": la plataforma pasa de "navegador de escritorio" a "navegador de escritorio y móvil,
-con controles táctiles". Desbloquea la spec 004 (entrada y accesibilidad: gamepad + táctil/móvil).
-NO redefine ni elimina ningún principio: los seis (I-VI) quedan intactos. Sigue siendo un jugador,
-en local, web estática sin backend. Fuera de alcance siguen: apps nativas en tiendas (el destino es
-la web, ahora también web móvil), multijugador/red, backend/persistencia en servidor y collmesh.
+Bump rationale: MINOR. Amplía materialmente una guía del Principio III (Alcance de producto) y de la
+sección "Restricciones técnicas y de plataforma": se permite UNA lectura de red SALIENTE y de SOLO
+LECTURA a una fuente pública (baliza/aleatoriedad), fuera del paso fijo, como adaptador puro, con
+degradación offline OBLIGATORIA. Desbloquea la spec 006 (circuito diario procedural anclado al hash
+de un bloque de Bitcoin). NO redefine ni elimina ningún principio: los seis (I-VI) quedan intactos.
+Sigue siendo un jugador, en local, web estática SIN BACKEND PROPIO; el determinismo, la frontera
+headless, la colisión sobre primitivas y la persistencia estrictamente local se mantienen sin cambios.
 
-Principios: I-VI CONSERVADOS sin cambios de texto.
+Principios: I-VI CONSERVADOS sin cambios de texto. El Principio III conserva su redacción y solo
+amplía sus listas de alcance: añade la lectura de solo lectura como permitida con guardarraíl y afina
+"fuera de alcance" para distinguir la red ENTRE JUGADORES / backend propio de una lectura pública que
+no envía datos.
 
 Secciones modificadas:
-  - Restricciones técnicas y de plataforma. "Plataforma" ahora incluye móvil + controles táctiles,
-    con el guardarraíl de que los flancos táctiles (botón de salto en pantalla) y los ejes del
-    joystick virtual se traducen en src/input y se consumen DENTRO del paso fijo igual que teclado y
-    mando (Principio II intacto). "Rendimiento" admite un suelo de FPS propio en móvil (a concretar
-    en la spec 004) sin cambiar el determinismo. "Distribución" aclara que la web estática es
-    accesible también desde navegador móvil.
+  - Principio III (Alcance de producto): nuevo ítem "en alcance" (lectura de red de solo lectura a
+    fuente pública, con degradación offline) + guardarraíl duro (adaptador puro fuera del paso fijo,
+    src/sim no lo importa, sin envío de datos) + afinado de la lista "fuera de alcance".
+  - Restricciones técnicas y de plataforma: "Plataforma" pasa de "Sin backend y sin red" a "Sin
+    backend propio; se permite una lectura de red de SOLO LECTURA a fuente pública con degradación
+    offline". Nuevo bullet "Red de solo lectura (v2.2.0)". "Distribución" aclara que el build no
+    requiere backend y que el juego arranca y es jugable sin red.
+  - Governance (Cambios de alcance): afinada la lista de lo que exige enmienda.
 
-Secciones añadidas/eliminadas: ninguna.
+Secciones añadidas/eliminadas: ninguna (solo ampliación de guías existentes).
 
 Estado de plantillas y documentos dependientes:
   ✅ .specify/templates/plan-template.md  (Constitution Check genérico que apunta a este archivo; sin cambios)
   ✅ .specify/templates/spec-template.md  (genérica; sin cambios)
   ✅ .specify/templates/tasks-template.md (sin cambios)
   ✅ .specify/templates/checklist-template.md (genérica; sin cambios)
-  ⚠ CLAUDE.md (raíz) — OPCIONAL: mencionar la plataforma móvil/táctil al aterrizar la spec 004; hoy
-    no contradice, su regla de alcance apunta a esta constitución.
-  ⚠ README.md — PENDIENTE: reencuadre prototipo -> juego (y mención de móvil) al cerrar el corte
-    mínimo publicable.
+  ⚠ CLAUDE.md (raíz) — OPCIONAL: mencionar la lectura de baliza de solo lectura al aterrizar la spec 006.
+  ⚠ README.md — PENDIENTE: reencuadre prototipo -> juego al cerrar el corte mínimo publicable.
 
 Follow-up TODOs:
-  - El suelo de rendimiento en móvil (si difiere del de escritorio) se concreta en la spec 004.
+  - La spec 006 fija proveedor(es) de baliza, derivación criptográfica y regla de selección de bloque.
   - Actualizar CLAUDE.md y README.md al cerrar el corte mínimo publicable.
 -->
 
@@ -110,12 +114,18 @@ guardarraíles):
 - **Persistencia local**: mejor marca y preferencias, mediante el almacenamiento del navegador.
 - **Más circuitos** y una **progresión básica** (por ejemplo selección o desbloqueo de circuitos y
   mejores tiempos por circuito).
+- **Lectura de red de solo lectura (v2.2.0)**: el juego PUEDE leer una fuente pública externa de
+  aleatoriedad/baliza (por ejemplo el hash de un bloque de Bitcoin) como entrada de construcción de
+  escena, fuera del paso fijo. Es de SOLO LECTURA: no hay backend propio, ni cuenta, ni envío de datos
+  o marcas, ni telemetría. La lectura DEBE degradar con elegancia (el juego sigue plenamente jugable
+  sin red, Principio VI) y su resultado PUEDE cachearse en el almacenamiento local del navegador.
 
 **Sigue fuera de alcance** (requiere enmienda antes de implementar):
 
-- Multijugador o red de cualquier tipo.
-- Cualquier backend, cuenta de usuario, ranking online o telemetría a servidor; la persistencia es
-  estrictamente local.
+- Multijugador o red ENTRE JUGADORES (P2P o coordinada por servidor).
+- Backend propio, cuenta de usuario, ranking online, envío de marcas o telemetría a servidor; la
+  persistencia es estrictamente local. (La lectura de SOLO LECTURA a una fuente pública de v2.2.0 NO es
+  un backend propio ni envía datos, por eso queda permitida.)
 - Colisión basada en mallas (collmesh): la colisión sigue resolviéndose sobre primitivas.
 
 **Guardarraíles duros (no negociables, se mantienen de v1.x):**
@@ -135,6 +145,10 @@ guardarraíles):
 - **Persistencia local**: solo almacenamiento del navegador (localStorage/IndexedDB), sin datos
   personales, degradando con elegancia si no está disponible, y sin tocar el paso fijo ni el
   determinismo.
+- **Red de solo lectura (v2.2.0)**: si una funcionalidad lee una fuente pública externa de baliza/
+  aleatoriedad, lo hace como adaptador/vista PURA fuera del paso fijo; `src/sim/` NO la importa. NO introduce no-determinismo
+  (Principio II) y DEBE tener degradación offline (Principio VI): sin red, el juego arranca y es
+  jugable. Solo lectura: sin backend propio, sin envío de datos ni telemetría.
 - Los valores de ajuste asociados siguen centralizados en `config.ts` (Principio V).
 
 Cualquier trabajo fuera de este alcance DEBE bloquearse hasta enmendar antes la spec y, si toca un
@@ -204,7 +218,10 @@ guardado, el juego sigue leyéndose como demo técnica por bueno que sea el cont
 ## Restricciones técnicas y de plataforma
 
 - **Plataforma (ampliada en v2.1.0)**: navegador de escritorio y móvil, un solo jugador, en local.
-  Sin backend y sin red. SÍ se permite persistencia LOCAL mediante el almacenamiento del navegador
+  Sin backend propio. Se permite UNA lectura de red saliente y de SOLO LECTURA a una fuente pública
+  (baliza/aleatoriedad), fuera del paso fijo, como adaptador puro; el juego DEBE seguir plenamente
+  jugable sin red (degradación offline obligatoria, Principio VI). SÍ se permite persistencia LOCAL
+  mediante el almacenamiento del navegador
   (mejor marca, preferencias). En móvil se admiten controles táctiles (joystick virtual para mover,
   botón de salto en pantalla, gesto de arrastre para la cámara); como cualquier otra entrada, sus
   flancos (p. ej. el toque del botón de salto) y los ejes del joystick virtual se traducen en
@@ -217,6 +234,12 @@ guardado, el juego sigue leyéndose como demo técnica por bueno que sea el cont
   personaje (Principio III): son vista pura alineada a los colliders, nunca geometría de colisión.
 - **Audio (v2.0.0)**: permitido (música y efectos). Se reproduce fuera del paso fijo y no introduce
   no-determinismo (Principio II).
+- **Red de solo lectura (v2.2.0)**: permitida UNA lectura saliente a una fuente pública (baliza/
+  aleatoriedad, p. ej. el hash de un bloque de Bitcoin vía API pública), como adaptador puro fuera del
+  paso fijo. Es de SOLO LECTURA: sin backend propio, sin cuenta, sin envío de marcas ni telemetría.
+  `src/sim/` no la importa; no introduce no-determinismo (Principio II). Degradación offline
+  OBLIGATORIA: sin red el juego arranca y es plenamente jugable (Principio VI), y el resultado PUEDE
+  cachearse en local.
 - **Físicas**: paso de tiempo fijo y desacoplado del render (ver Principio II).
 - **Rendimiento**: objetivo >= 60 FPS en un navegador de escritorio típico, sin caer por debajo de
   un nivel jugable (SC-008), con el audio, la interfaz y el arte decorativo cargados. En navegador
@@ -227,7 +250,9 @@ guardado, el juego sigue leyéndose como demo técnica por bueno que sea el cont
   jugable en pocos segundos (objetivo <= 3 s, SC-005), sin recargar la página.
 - **Distribución (v2.0.0)**: el juego DEBE poder publicarse como web estática autocontenida (por
   ejemplo GitHub Pages o itch.io), accesible también desde navegador móvil, sin servidor en
-  ejecución. El build de producción no DEBE requerir un backend.
+  ejecución. El build de producción no DEBE requerir un backend propio. Una funcionalidad PUEDE leer
+  una fuente pública externa de baliza/aleatoriedad (v2.2.0), pero el juego DEBE arrancar y ser jugable
+  sin red (degradación offline); la red enriquece, no es requisito para ejecutarse.
 - **Stack concreto**: el motor de render y la biblioteca de físicas se eligen en el plan
   (`/speckit-plan`). La elección DEBE ser ejecutable en navegador y respetar estas restricciones;
   esta constitución no fija librerías concretas.
@@ -268,8 +293,9 @@ Esta constitución prevalece sobre las prácticas ad hoc durante el desarrollo d
 - **Cumplimiento**: el *Constitution Check* de cada plan DEBE confirmar que el trabajo respeta estos
   principios. Las violaciones se justifican en *Complexity Tracking* con una alternativa más simple
   razonada, o el trabajo se rechaza.
-- **Cambios de alcance**: cualquier cosa listada como fuera de alcance (multijugador/red, backend o
-  persistencia en servidor, collmesh) requiere enmendar primero la spec, y esta constitución si toca
-  un principio, antes de implementarse.
+- **Cambios de alcance**: cualquier cosa listada como fuera de alcance (multijugador o red entre
+  jugadores, backend propio o persistencia en servidor, ranking o envío de marcas online, collmesh)
+  requiere enmendar primero la spec, y esta constitución si toca un principio, antes de implementarse.
+  La lectura de red de SOLO LECTURA a fuente pública con degradación offline quedó permitida en v2.2.0.
 
-**Version**: 2.1.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-25
+**Version**: 2.2.0 | **Ratified**: 2026-06-24 | **Last Amended**: 2026-06-25
