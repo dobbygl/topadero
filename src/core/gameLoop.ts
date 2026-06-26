@@ -36,6 +36,17 @@ function clamp01(x: number): number {
   return x < 0 ? 0 : x > 1 ? 1 : x
 }
 
+/**
+ * Pausa determinista (007). Desplaza el ancla por el tiempo pausado (SEGUNDOS, mismo reloj que
+ * `now` en `advance`) para que el intervalo de pausa NO genere pasos: `dueSteps = floor((now -
+ * simStartWall)/DT)` no incluye la pausa. Se llama al REANUDAR (no toca `advance()` ni `src/sim/`,
+ * así que el determinismo / independencia de FPS sigue intacto, Principio II). Para un INTENTO NUEVO
+ * (no reanudar) NO se usa esto: se re-ancla el bucle con `createLoopState()`.
+ */
+export function pauseShift(state: LoopState, pausedSec: number): void {
+  state.simStartWall += pausedSec
+}
+
 /** Avanza la simulación para alcanzar el reloj `now`. Muta `sim`, `state` y `frame.edges`. */
 export function advance(sim: Simulation, state: LoopState, now: number, frame: FrameInput): void {
   const DT = config.FIXED_DT

@@ -3,19 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Topadero: prototipo de plataformas de obstáculos en el navegador</title>
-  <meta name="description" content="Topadero es un prototipo de plataformas de obstáculos para el navegador, estilo Fall Guys, de un jugador. Físicas deterministas: el mismo input traza la misma trayectoria a 30 o a 144 FPS." />
+  <title>Topadero: un circuito nuevo cada día, en el navegador</title>
+  <meta name="description" content="Topadero es un juego de plataformas de obstáculos para el navegador, estilo Fall Guys, de un jugador. Cada día un circuito nuevo, el mismo para todo el mundo, con físicas deterministas: el mismo input traza la misma trayectoria a 30 o a 144 FPS." />
   <meta name="theme-color" content="#7EC8F3" />
 
   <!-- Social. TODO al desplegar: og:image/twitter:image deben ser URL ABSOLUTAS
        (https://tu-dominio/assets/og.jpg); los scrapers no resuelven rutas relativas. -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Topadero: batir tu tiempo es todo el juego" />
-  <meta property="og:description" content="Prototipo de plataformas de obstáculos en el navegador. Físicas deterministas: misma trayectoria a 30 o 144 FPS." />
+  <meta property="og:description" content="Plataformas de obstáculos en el navegador: un circuito nuevo cada día y físicas deterministas (misma trayectoria a 30 o 144 FPS)." />
   <meta property="og:image" content="assets/og.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Topadero: batir tu tiempo es todo el juego" />
-  <meta name="twitter:description" content="Prototipo de plataformas de obstáculos en el navegador. Físicas deterministas: misma trayectoria a 30 o 144 FPS." />
+  <meta name="twitter:description" content="Plataformas de obstáculos en el navegador: un circuito nuevo cada día y físicas deterministas (misma trayectoria a 30 o 144 FPS)." />
   <meta name="twitter:image" content="assets/og.jpg" />
 
   <!-- Favicon -->
@@ -85,7 +85,7 @@
           <div class="hero__copy">
             <p class="eyebrow">p0 · salida</p>
             <h1 class="hero__title">Batir tu tiempo<br />es todo el juego.</h1>
-            <p class="hero__sub">Topadero es un prototipo de plataformas de obstáculos para el navegador, estilo Fall Guys, de un solo jugador en local. Mueves una cápsula naranja por un circuito corto y peleas contra el cronómetro. Ya se juega: es un prototipo, hay poco y es pronto, pero funciona en el navegador y el desarrollo es abierto.</p>
+            <p class="hero__sub">Topadero es un juego de plataformas de obstáculos para el navegador, estilo Fall Guys, de un solo jugador en local. Mueves una cápsula naranja por el circuito del día y peleas contra el cronómetro. Cada día hay un trazado nuevo, el mismo para todo el mundo, y tu mejor marca se guarda. Se juega ya, sin instalar nada, y el desarrollo es abierto.</p>
             <p class="hero__data mono-strip">
               <span>CRONO <span class="crono" id="hero-crono">00:00.000</span></span>
               <span class="sep">·</span><span>p0 → meta</span>
@@ -111,7 +111,7 @@
           <div data-reveal>
             <p class="eyebrow">p1 · qué es</p>
             <h2 class="h2">Un muñeco que da gusto mover.</h2>
-            <p class="lead">Toda la apuesta del prototipo cabe en una frase: que mover la cápsula se sienta bien. Controlas al blob en tercera persona, con una cámara orbital que lo sigue suave mientras giras con el ratón. El salto va solo cuando estás apoyado, sin doble salto, así que cada brinco se piensa. No hay menús ni historia: hay un circuito, un reloj y tú.</p>
+            <p class="lead">Toda la apuesta cabe en una frase: que mover la cápsula se sienta bien. Controlas al blob en tercera persona, con una cámara orbital que lo sigue suave mientras giras con el ratón. El salto va solo cuando estás apoyado, sin doble salto, así que cada brinco se piensa. Arrancas desde una pantalla de título, puedes pausar y ajustar sonido o controles, y al cruzar la meta ves tu tiempo y tu mejor marca.</p>
             <p class="mono-strip" style="margin-top:20px">
               <span><b>WASD</b></span><span class="sep">·</span>
               <span><b>ESPACIO</b></span><span class="sep">·</span>
@@ -178,8 +178,8 @@
     <section id="p3-circuito" class="band">
       <div class="wrap">
         <p class="eyebrow" data-reveal>p3 · el circuito</p>
-        <h2 class="h2" data-reveal>De p0 a meta, en orden.</h2>
-        <p class="lead" data-reveal>El nivel es una secuencia corta de primitivas: cápsulas, cajas y cilindros, sin un solo modelo 3D. Sales en p0, encadenas plataformas hasta p5, subes una rampa y esquivas un obstáculo en movimiento antes de cruzar la meta. Cada pieza tiene su física y su sitio. Aquí la numeración está ganada, porque esto es de verdad una secuencia.</p>
+        <h2 class="h2" data-reveal>Un circuito nuevo cada día.</h2>
+        <p class="lead" data-reveal>El circuito se arma cada día con las mismas piezas: cápsulas, cajas y cilindros, sin un solo modelo 3D de colisión. Sales en la salida, encadenas plataformas, subes una rampa y esquivas obstáculos en movimiento antes de cruzar la meta. Cambia el trazado, no las reglas, y es el mismo para todo el mundo: la gracia es batir tu tiempo en el reto del día.</p>
 
         <ol class="circuit" data-reveal>
           <li class="station">
@@ -227,7 +227,7 @@
           <div data-reveal>
             <p class="eyebrow">p4 · el obstáculo</p>
             <h2 class="h2">Te empuja. Y te puede tirar.</h2>
-            <p class="lead">En mitad del circuito hay un obstáculo en movimiento que no perdona. Al contacto te empuja con un impulso de derribo y puede sacarte de la plataforma. Si caes, vuelves al punto de salida del intento en pocos segundos, sin recargar la página. Pulsas R y empiezas de nuevo. El reloj sigue, claro.</p>
+            <p class="lead">Por el circuito hay obstáculos en movimiento que no perdonan. Al contacto te empujan con un impulso de derribo y pueden sacarte de la plataforma. Si caes, vuelves al punto de salida del intento en pocos segundos, sin recargar. Reinicias desde el menú de pausa (o con la tecla R) y a por otra. El reloj sigue, claro.</p>
             <p class="mono-strip" style="margin-top:20px">
               <span><b>respawn</b> ≤ 3 s</span><span class="sep">·</span>
               <span><b>R</b> reinicia el intento</span>
@@ -249,7 +249,7 @@
       <div class="wrap">
         <p class="eyebrow" data-reveal>p5 · controles</p>
         <h2 class="h2" data-reveal>Cuatro cosas que aprender.</h2>
-        <p class="lead" data-reveal>Mover con WASD o las flechas. Saltar con Espacio. Orbitar la cámara con el ratón. Reiniciar el intento con R, sin recargar. Eso es todo. La ficha de abajo es la lista exacta, sin adornos.</p>
+        <p class="lead" data-reveal>Mover con WASD o las flechas. Saltar con Espacio. Orbitar la cámara con el ratón. Reiniciar el intento con R, sin recargar. También se juega con mando y, en móvil, con controles en pantalla, y puedes instalarlo como app. La ficha de abajo es la lista exacta, sin adornos.</p>
 
         <div class="controls__grid">
           <ul class="keys" data-reveal>
@@ -293,7 +293,7 @@
             <p class="eyebrow eyebrow--meta">meta · cierre</p>
             <h2 class="h2">Llega a la meta y bate tu tiempo.</h2>
             <p class="seal"><span class="lbl">TU TIEMPO</span> <span class="time">--:--.---</span></p>
-            <p class="lead">El circuito termina en un arco dorado. Crúzalo y el cronómetro marca tu tiempo. Es un prototipo: pocas piezas y todavía pronto, pero ya se juega en el navegador. Dale unas vueltas, mejora tu marca y, si te va el detalle, el desarrollo es abierto.</p>
+            <p class="lead">El circuito termina en un arco dorado. Crúzalo y el cronómetro marca tu tiempo; si bajas tu mejor marca del día, se guarda. Vuelve mañana y el trazado será otro. Dale unas vueltas, baja tu tiempo y, si te va el detalle, el desarrollo es abierto.</p>
             <div class="hero__actions">
               <a class="btn btn--gold btn--lg" href="play/">Juega ahora</a>
               <a class="btn btn--ghost btn--lg" href="https://github.com/dobbygl/topadero" target="_blank" rel="noopener">Sigue el código</a>

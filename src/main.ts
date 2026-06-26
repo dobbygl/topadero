@@ -1,11 +1,13 @@
-// Bootstrap del navegador: inicializa Rapier (una vez), crea la simulación y las vistas,
-// y arranca el bucle de paso fijo. El reloj de requestAnimationFrame (ms) se pasa en
-// SEGUNDOS al bucle (research R2; FIXED_DT en segundos).
+// Bootstrap del navegador (007): inicializa Rapier (una vez), resuelve el circuito del día, crea la
+// simulación y las vistas, y arranca el bucle de paso fijo GOBERNADO POR EL SHELL. El shell (vista
+// pura, src/ui) decide la pantalla; el bucle solo AVANZA la simulación cuando screen==='playing'. La
+// pausa vive aquí, FUERA de advance()/src/sim (desplazando el ancla con pauseShift), así el test de
+// determinismo no se toca (Principio II). El reloj de requestAnimationFrame (ms) se pasa en SEGUNDOS.
 
 import * as RAPIER from '@dimforge/rapier3d-compat'
 import { config } from './config'
 import type { CircuitDefinition } from './circuit'
-import { advance, createLoopState } from './core/gameLoop'
+import { advance, createLoopState, pauseShift } from './core/gameLoop'
 import { quatFromYaw } from './types'
 import { FollowCamera } from './render/followCamera'
 import { SceneView } from './render/scene'
@@ -16,8 +18,11 @@ import { Simulation } from './sim/simulation'
 import { registerServiceWorker } from './pwa/install'
 import { AudioManager } from './audio/audio'
 import { detectAudioEvents, snapshotOf, type AudioSnapshot } from './audio/events'
-import { resolveDailyCircuit, loadBest, recordBest, type DailyCircuit } from './daily/daily'
+import { resolveDailyCircuit, loadBest, recordBest, utcDay, type DailyCircuit } from './daily/daily'
 import { DailyHud } from './ui/dailyHud'
+import { Shell } from './ui/shell'
+import { SettingsPanel } from './ui/settingsPanel'
+import { settings } from './settings/settings'
 
 async function main(): Promise<void> {
   registerServiceWorker() // PWA (004 · US4): offline tras la primera carga; no toca el paso fijo.
@@ -36,7 +41,6 @@ async function main(): Promise<void> {
       if (name && !found) console.warn(`Sandbox desconocido: ${name}`)
       const scene = found ?? indexScene
       circuitDef = scene.circuit
-      // Panel de depuración (índice de escenas + sliders en vivo) y recarga al cambiar de escena.
       const { SandboxPanel } = await import('./ui/sandboxPanel')
       new SandboxPanel(document.body, listSandboxScenes(), scene)
       window.addEventListener('hashchange', () => location.reload())
@@ -63,8 +67,6 @@ async function main(): Promise<void> {
   // Carga de assets ANTES de jugar: ninguna latencia entra en el paso fijo (FR-016).
   const assets = await loadAssets(sim.getCircuitDefinition())
   const app = document.getElementById('app') as HTMLElement
-  // Decoración del circuito fijo (portal de meta, pedestal del cañón, globos…) SOLO con el circuito
-  // fijo: el sandbox y el circuito diario tienen otro layout, así que esos props ahí estorban.
   const view = new SceneView(app, sim.getCircuitDefinition(), assets, { decor: !circuitDef && !daily })
   view.resize()
 
@@ -72,17 +74,20 @@ async function main(): Promise<void> {
   // Accesibilidad (004 · US3): reduce el movimiento de cámara si la preferencia o el sistema lo pide.
   camera.reducedMotion =
     config.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const hud = new Hud(document.getElementById('hud') as HTMLElement)
+  const hudEl = document.getElementById('hud') as HTMLElement
+  const hud = new Hud(hudEl)
   // HUD del circuito diario (006 · US2/US3): procedencia + cuenta atrás + mejor marca. Solo vista.
   const dailyHud = daily ? new DailyHud(document.body, daily, loadBest(daily.dayUTC, daily.structuralHash)) : null
-  let bestRecorded = false
   const input = new Input(view.renderer.domElement)
-  const loop = createLoopState()
+  let loop = createLoopState()
 
   // Audio (005): vista de render fuera del paso fijo. Detecta eventos del estado y los reproduce.
   const audio = new AudioManager()
   audio.init()
   void audio.preload() // no bloquea el arranque; degrada en silencio si falla
+  // Ajustes (007 · US4): cargar y aplicar preferencias persistidas (volúmenes + sensibilidad) al arrancar.
+  settings.bind(audio)
+  settings.load()
   const audioThresholds = {
     jumpVy: config.audio.jumpVyThreshold,
     hitKnockback: config.audio.hitKnockbackThreshold,
@@ -90,29 +95,108 @@ async function main(): Promise<void> {
   }
   let prevSnap: AudioSnapshot | null = null
 
-  const clickToPlay = document.getElementById('click-to-play') as HTMLElement
-  clickToPlay.addEventListener('click', () => {
-    clickToPlay.classList.add('hidden')
-    input.requestLock()
-    audio.resume() // autoplay: el audio arranca con la primera interacción
+  // --- Shell (007): máquina de estados de pantallas + panel de ajustes. Vista pura. ---
+  const shell = new Shell(document.body)
+  const settingsPanel = new SettingsPanel(document.body)
+  let pausedSince: number | null = null
+  let resultRecorded = false
+  let debug = new URLSearchParams(location.search).has('debug') // ?debug arranca el overlay (capturas)
+
+  // Empieza un intento NUEVO (título→jugar, volver a jugar, reiniciar): re-ancla el bucle para que el
+  // tiempo fuera de juego NO genere pasos espurios (clamp MAX_SUBSTEPS), resetea la simulación
+  // directamente (el flanco `restart` no se consumiría con un ancla nuevo) y desbloquea el audio.
+  const startFreshAttempt = (): void => {
+    sim.restart()
+    loop = createLoopState()
+    input.clearEdges()
+    pausedSince = null
+    resultRecorded = false
+    prevSnap = null
+    audio.resume() // autoplay: el audio arranca con la primera interacción (gesto "Jugar")
     audio.startMusic()
-  })
-  // Modo captura (?shot): oculta el overlay para screenshots limpios del escenario.
-  if (new URLSearchParams(location.search).has('shot')) clickToPlay.classList.add('hidden')
+    input.requestLock()
+    shell.toPlaying()
+  }
+
+  const pauseGame = (): void => {
+    if (shell.screen !== 'playing') return
+    pausedSince = performance.now() / 1000 // SEGUNDOS, mismo reloj que advance
+    input.clearEdges() // que el gesto de reanudar no dispare un salto colgado (FR-008)
+    if (document.pointerLockElement) document.exitPointerLock()
+    shell.toPaused()
+  }
+
+  const resumeGame = (): void => {
+    if (shell.screen !== 'paused') return
+    if (pausedSince !== null) {
+      pauseShift(loop, performance.now() / 1000 - pausedSince) // absorbe la pausa: 0 pasos en el hueco
+      pausedSince = null
+    }
+    input.clearEdges()
+    prevSnap = null
+    input.requestLock()
+    shell.toPlaying()
+  }
+
+  const goToTitle = (): void => {
+    // FR-024a: si cambió el día UTC mientras el shell estaba abierto, recoger el circuito del día
+    // nuevo recargando (re-resuelve en el boot: caché-first → red → offline). El siguiente "Jugar"
+    // usa el circuito de hoy. (Implementación: reload en vez de rebuild in-place; ver research R2.)
+    if (daily && utcDay(Math.floor(Date.now() / 1000)) !== daily.dayUTC) {
+      location.reload()
+      return
+    }
+    pausedSince = null
+    if (document.pointerLockElement) document.exitPointerLock()
+    shell.toTitle()
+  }
+
+  // Cableado de intenciones del shell → trabajo del host + transición.
+  shell.onPlay = startFreshAttempt
+  shell.onRestart = startFreshAttempt
+  shell.onResume = resumeGame
+  shell.onToTitle = goToTitle
+  shell.onOpenSettings = () => {
+    settingsPanel.setDebugState(debug)
+    settingsPanel.open()
+  }
+  settingsPanel.onToggleDebug = (on) => {
+    debug = on
+  }
+
+  // Todo listo (sim + escena + assets + shell): retirar la pantalla de arranque estática (#boot).
+  document.getElementById('boot')?.remove()
+
+  // Modo captura (?shot): salta el título directo al escenario para pantallazos limpios (ruta dev,
+  // FR-023). El jugador SIEMPRE pasa por el título.
+  if (new URLSearchParams(location.search).has('shot')) startFreshAttempt()
+  else shell.toTitle()
 
   window.addEventListener('resize', () => {
     view.resize()
     camera.resize(view.aspect)
   })
 
-  // Modo debug de física (tecla B): overlay de colliders de Rapier. Es solo de vista; NO entra
-  // en el StepInput determinista (getFrameInput ignora 'KeyB'), así que no afecta a la simulación.
-  let debug = new URLSearchParams(location.search).has('debug') // ?debug arranca el overlay (capturas)
+  // Disparadores de pausa (FR-007a/FR-009):
+  // - escritorio: tecla de pausa (P/Esc) y salida de pointer lock (Esc del navegador) durante el juego.
+  // - cualquier plataforma (móvil incluido): pérdida de foco / pestaña oculta → auto-pausa.
   window.addEventListener('keydown', (e) => {
-    audio.resume() // primera interacción por teclado: arranca el audio
-    audio.startMusic()
-    if (e.code === 'KeyB') debug = !debug
-    else if (e.code === config.audio.muteKey) audio.toggleMuted()
+    if (e.code === 'KeyB') debug = !debug // debug físicas (vista; ignorado por el StepInput determinista)
+    else if (e.code === config.audio.muteKey) settings.setMuted(!settings.muted) // persiste el silencio
+    else if (e.code === 'KeyP') {
+      // Pausa explícita por teclado. El Esc del navegador suelta el pointer lock y la pausa la dispara
+      // `pointerlockchange` (evita el doble manejo: Esc→soltar lock→pausa, y el keydown reanudaría).
+      if (shell.screen === 'playing') pauseGame()
+      else if (shell.screen === 'paused' && !settingsPanel.isOpen) resumeGame()
+    }
+  })
+  document.addEventListener('pointerlockchange', () => {
+    if (!document.pointerLockElement && shell.screen === 'playing' && input.activeScheme !== 'touch') {
+      pauseGame()
+    }
+  })
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && shell.screen === 'playing') pauseGame()
   })
 
   // Cámara de inspección (?look=<z>): enfoca un punto del circuito desde un 3/4. Solo dev/capturas.
@@ -124,26 +208,44 @@ async function main(): Promise<void> {
     const dtRender = Math.min((nowMs - lastRenderMs) / 1000, 0.1)
     lastRenderMs = nowMs
 
-    advance(sim, loop, nowMs / 1000, input.getFrameInput(nowMs / 1000))
+    // Capturar UNA vez si estábamos en juego: la detección de victoria flipa la pantalla a
+    // 'results', pero el bloque de audio debe seguir contando este fotograma como "en juego" para
+    // que el flanco running→won dispare el SFX de meta (`finish`) antes del flip (Principio VI).
+    const playing = shell.screen === 'playing'
+
+    // El paso fijo SOLO avanza en juego (FR-012): pausa/título/resultados congelan la simulación.
+    if (playing) {
+      advance(sim, loop, nowMs / 1000, input.getFrameInput(nowMs / 1000))
+    }
 
     const ps = sim.getPlayerState()
     const run = sim.getRunState()
-    // Circuito diario (006): cuenta atrás siempre; al GANAR, registra la mejor marca local del día.
-    if (dailyHud && daily) {
-      dailyHud.updateCountdown(Date.now())
-      if (run.phase === 'won') {
-        if (!bestRecorded) {
-          bestRecorded = true
-          dailyHud.setBest(recordBest(daily, Math.round(run.elapsedSimTime * 1000)))
-        }
-      } else {
-        bestRecorded = false // re-armar para el siguiente intento (R reinicia)
-      }
+
+    // Cuenta atrás del circuito diario (siempre); al GANAR, registrar mejor marca y mostrar resultados.
+    if (dailyHud) dailyHud.updateCountdown(Date.now())
+    if (playing && run.phase === 'won' && !resultRecorded) {
+      resultRecorded = true
+      const timeMs = Math.round(run.elapsedSimTime * 1000)
+      const best = daily ? recordBest(daily, timeMs) : null
+      const isNewBest = !!best && best.bestTimeMs === timeMs
+      if (dailyHud && best) dailyHud.setBest(best)
+      shell.toResults({
+        timeMs,
+        bestMs: best?.bestTimeMs ?? null,
+        isNewBest,
+        competitive: daily?.competitive ?? false,
+      })
+      if (document.pointerLockElement) document.exitPointerLock()
     }
-    // Audio: detectar eventos por transiciones del estado muestreado (no toca la simulación).
-    const snap = snapshotOf(ps, run)
-    for (const ev of detectAudioEvents(prevSnap, snap, audioThresholds)) audio.play(ev)
-    prevSnap = snap
+
+    // Audio: detectar eventos por transiciones del estado muestreado del fotograma en juego (incluye
+    // el de victoria). No toca la simulación. `playing` se capturó ANTES del flip a 'results'.
+    if (playing) {
+      const snap = snapshotOf(ps, run)
+      for (const ev of detectAudioEvents(prevSnap, snap, audioThresholds)) audio.play(ev)
+      prevSnap = snap
+    }
+
     camera.update(ps.position, input.yaw, input.pitch, dtRender)
     if (lookZ !== null) {
       if (new URLSearchParams(location.search).has('top')) {

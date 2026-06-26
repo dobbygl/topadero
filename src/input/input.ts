@@ -41,6 +41,15 @@ export class Input {
     return this.scheme.active
   }
 
+  /**
+   * Vacía los flancos pendientes (007). El shell lo llama al PAUSAR y al empezar un intento NUEVO,
+   * para que ningún salto/reinicio bufferizado se dispare al reanudar o re-anclar el bucle
+   * (coherente con el caso de pérdida de foco de la spec 003).
+   */
+  clearEdges(): void {
+    this.edges.length = 0
+  }
+
   // Pointer lock solo fuera del esquema táctil (con el dedo no se usa).
   requestLock = (): void => {
     if (this.scheme.active !== 'touch') this.km.lock()

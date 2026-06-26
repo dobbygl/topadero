@@ -45,19 +45,65 @@
       #hud .banner.show { display: flex; }
       #hud .banner h1 { margin: 0 0 8px; font-size: 48px; font-weight: 900; letter-spacing: 2px; color: var(--gold); }
       #hud .banner p { margin: 0; font-size: 20px; }
-      #click-to-play {
-        position: absolute; inset: 0; display: flex;
-        align-items: center; justify-content: center;
-        font-family: system-ui, sans-serif; color: var(--paper); font-size: 18px; font-weight: 600;
-        background: rgba(20,35,59,.45); cursor: pointer; padding: 0 16px; text-align: center;
+      /* Shell de juego (007): título, pausa, resultados, ajustes. Solo la pantalla activa (.show)
+         captura el puntero; el HUD del cronómetro se oculta fuera de juego. */
+      body:not([data-screen="playing"]) #hud { display: none; }
+      #shell { position: fixed; inset: 0; pointer-events: none; z-index: 20;
+        font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .shell-screen {
+        position: fixed; inset: 0; display: none; pointer-events: auto;
+        flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+        padding: max(24px, env(safe-area-inset-top)) 20px; box-sizing: border-box; text-align: center;
+        background: rgba(20,35,59,.62); color: var(--paper);
+        opacity: 0; transition: opacity .18s ease;
       }
-      #click-to-play.hidden { display: none; }
+      .shell-screen.show { display: flex; opacity: 1; }
+      .shell-logo { margin: 0; font-size: clamp(40px, 12vw, 84px); font-weight: 900; letter-spacing: 3px; color: var(--gold); }
+      .shell-screen h2 { margin: 0 0 4px; font-size: clamp(28px, 7vw, 44px); font-weight: 900; color: var(--paper); }
+      .shell-hint { margin: 0 0 8px; max-width: 30em; font-size: 14px; font-weight: 600; opacity: .92; }
+      .shell-hint b { color: var(--teal); }
+      .shell-time { font-size: clamp(40px, 11vw, 72px); font-weight: 900; font-variant-numeric: tabular-nums; color: var(--gold); }
+      .shell-best { font-size: 16px; font-weight: 700; min-height: 1.2em; }
+      .shell-badge { display: none; font-weight: 900; color: var(--ink); background: var(--gold);
+        padding: 4px 14px; border-radius: 999px; transform: rotate(-3deg); }
+      .shell-badge.show { display: inline-block; }
+      .shell-btn {
+        min-width: 200px; min-height: 48px; padding: 12px 22px; font: inherit; font-weight: 800;
+        color: var(--ink); background: var(--paper); border: 3px solid var(--ink);
+        border-radius: 999px; box-shadow: 0 4px 0 var(--ink); cursor: pointer;
+      }
+      .shell-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--ink); }
+      .shell-btn.primary { color: var(--paper); background: var(--pink); }
+      .shell-btn:focus-visible { outline: 4px solid var(--teal); outline-offset: 3px; }
+      /* Panel de ajustes (modal sobre el título/pausa) */
+      #settings-panel { background: rgba(20,35,59,.78); z-index: 30; }
+      .settings-card {
+        width: min(440px, 92vw); max-height: 86vh; overflow-y: auto;
+        display: flex; flex-direction: column; gap: 12px;
+        background: var(--paper); color: var(--ink);
+        border: 3px solid var(--ink); border-radius: 18px; box-shadow: 0 6px 0 var(--ink);
+        padding: 20px; text-align: left;
+      }
+      .settings-card h2 { color: var(--ink); margin: 0 0 6px; }
+      .settings-subtitle { margin: 8px 0 0; font-size: 14px; opacity: .7; }
+      .settings-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-weight: 700; }
+      .settings-row input[type="range"] { flex: 1; max-width: 60%; }
+      .settings-row input[type="checkbox"] { width: 22px; height: 22px; }
+      .settings-card .shell-btn.rebind { min-width: 0; min-height: 36px; padding: 6px 14px; font-size: 13px; box-shadow: 0 3px 0 var(--ink); }
+      @media (prefers-reduced-motion: reduce) { .shell-screen { transition: none; } }
+      /* Pantalla de arranque estática: feedback inmediato mientras el boot async (Rapier WASM +
+         circuito del día + assets) prepara el shell; el JS la retira al montar el shell. */
+      #boot { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 10px; background: var(--sky);
+        font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--ink); }
+      #boot b { font-size: clamp(40px, 12vw, 84px); font-weight: 900; letter-spacing: 3px; color: var(--gold); }
+      #boot span { font-size: 16px; font-weight: 700; opacity: .85; }
     </style>
   </head>
   <body>
     <div id="app"></div>
     <div id="hud"></div>
-    <div id="click-to-play">Toca o haz clic para jugar</div>
+    <div id="boot"><b>TOPADERO</b><span>Cargando…</span></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
