@@ -9,6 +9,7 @@ import { quatFromYaw, type PlayerStateView, type RunStateView, type StepInput, t
 import { createPlayer, readPlayerState, respawnPlayer, stepPlayer, type Player } from './player'
 import { pose, velocity, colliderHalfExtents, type Pose } from './movingObstacle'
 import { createRunState, readRunState, resetRunState, type RunState } from './runState'
+import { createCannonState, resetCannonState, stepCannon, type CannonState } from './cannon'
 import { inAABB } from './zones'
 
 export class Simulation {
@@ -16,6 +17,7 @@ export class Simulation {
   private readonly player: Player
   private readonly obstacles: { body: RAPIER.RigidBody; def: ObstacleDef }[]
   private readonly run: RunState
+  private readonly cannons: CannonState[] // prototipo reactivo; vacío en el circuito real
   private readonly config: Config
   private readonly circuit: CircuitDefinition
   private simTime = 0
@@ -60,6 +62,7 @@ export class Simulation {
 
     this.player = createPlayer(this.world, config, circuitDef.spawn)
     this.run = createRunState()
+    this.cannons = (circuitDef.cannons ?? []).map(createCannonState)
 
     this.prevPlayerPos = { ...circuitDef.spawn }
     this.prevObstaclePoses = this.snapshotObstaclePoses()
@@ -91,6 +94,21 @@ export class Simulation {
 
     // 2. Empuje: solape AABB del jugador con cada obstáculo (pose actual) → velocidad de empuje.
     this.applyKnockbackIfContact(t)
+
+    // 2b. Cañones (prototipo): apuntan al jugador y disparan; el impacto del proyectil aplica
+    // knockback (determinista, dentro del paso fijo). Vacío en el circuito real → no-op.
+    if (this.cannons.length > 0) {
+      const pt = this.player.body.translation()
+      const pc: Vec3 = { x: pt.x, y: pt.y, z: pt.z }
+      for (const cs of this.cannons) {
+        const hit = stepCannon(cs, pc, dt, this.config)
+        if (hit) {
+          const mag = Math.min(this.config.cannon.knockbackStrength, this.config.knockbackMax)
+          this.player.knockbackX = hit.x * mag
+          this.player.knockbackZ = hit.z * mag
+        }
+      }
+    }
 
     // 3-4. Mover al jugador (gravedad + input + empuje + transporte portante) vía KCC.
     const carryDelta = this.computeCarryDelta(t)
@@ -243,6 +261,7 @@ export class Simulation {
       body.setTranslation(p.position, true)
       body.setRotation(p.quaternion, true)
     }
+    for (const cs of this.cannons) resetCannonState(cs)
     this.capturePrev()
   }
 
@@ -274,6 +293,16 @@ export class Simulation {
   }
   getRunState(): RunStateView {
     return readRunState(this.run)
+  }
+  /** Cañones (prototipo): pivote + dirección de apuntado, para que el render oriente la malla. */
+  getCannonViews(): { base: Vec3; aim: Vec3 }[] {
+    return this.cannons.map((c) => ({ base: c.base, aim: { ...c.aim } }))
+  }
+  /** Posiciones de los proyectiles vivos (para el render). */
+  getProjectiles(): Vec3[] {
+    const out: Vec3[] = []
+    for (const c of this.cannons) for (const p of c.projectiles) out.push({ x: p.x, y: p.y, z: p.z })
+    return out
   }
   getObstacleTransforms(): Transform[] {
     return this.obstacles.map(({ body }) => {

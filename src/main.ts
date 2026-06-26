@@ -4,6 +4,7 @@
 
 import * as RAPIER from '@dimforge/rapier3d-compat'
 import { config } from './config'
+import type { CircuitDefinition } from './circuit'
 import { advance, createLoopState } from './core/gameLoop'
 import { quatFromYaw } from './types'
 import { FollowCamera } from './render/followCamera'
@@ -22,20 +23,49 @@ async function main(): Promise<void> {
   registerServiceWorker() // PWA (004 · US4): offline tras la primera carga; no toca el paso fijo.
   await RAPIER.init()
 
-  // Circuito diario (006): construcción de escena ANTES de jugar, FUERA del paso fijo (FR-006). La
-  // resolución de baliza + generación son deterministas y no tocan src/sim. Degradación obligatoria:
-  // si algo inesperado falla, se cae al circuito fijo para no dejar pantalla en blanco (Principio VI).
-  let daily: DailyCircuit | null = null
-  try {
-    daily = await resolveDailyCircuit(Date.now())
-  } catch (e: unknown) {
-    console.warn('Circuito diario no resuelto; uso el circuito fijo:', e)
+  // Sandbox (DEV-ONLY): la ruta #/sandbox/<name> carga una escena de prueba y TIENE PRELACIÓN sobre el
+  // circuito diario (para probar/afinar elementos aislados). En producción import.meta.env.DEV es false
+  // → Vite elimina este bloque y el import dinámico; src/sandbox/ no entra en el build ni las rutas.
+  let circuitDef: CircuitDefinition | undefined
+  if (import.meta.env.DEV) {
+    const m = location.hash.match(/^#\/sandbox(?:\/([\w-]+))?/)
+    if (m) {
+      const { getSandboxScene, listSandboxScenes, indexScene } = await import('./sandbox')
+      const name = m[1] ?? ''
+      const found = name ? getSandboxScene(name) : indexScene
+      if (name && !found) console.warn(`Sandbox desconocido: ${name}`)
+      const scene = found ?? indexScene
+      circuitDef = scene.circuit
+      // Panel de depuración (índice de escenas + sliders en vivo) y recarga al cambiar de escena.
+      const { SandboxPanel } = await import('./ui/sandboxPanel')
+      new SandboxPanel(document.body, listSandboxScenes(), scene)
+      window.addEventListener('hashchange', () => location.reload())
+    }
   }
-  const sim = daily ? Simulation.create(config, daily.circuit) : Simulation.create()
+
+  // Circuito diario (006): si NO hay sandbox, resolver el circuito del día (baliza fuera del paso fijo,
+  // FR-006). Degradación: si falla, se cae al circuito fijo para no dejar pantalla en blanco (Principio VI).
+  let daily: DailyCircuit | null = null
+  if (!circuitDef) {
+    try {
+      daily = await resolveDailyCircuit(Date.now())
+    } catch (e: unknown) {
+      console.warn('Circuito diario no resuelto; uso el circuito fijo:', e)
+    }
+  }
+
+  const sim = circuitDef
+    ? Simulation.create(config, circuitDef)
+    : daily
+      ? Simulation.create(config, daily.circuit)
+      : Simulation.create()
+  const hasCannons = sim.getCannonViews().length > 0
   // Carga de assets ANTES de jugar: ninguna latencia entra en el paso fijo (FR-016).
   const assets = await loadAssets(sim.getCircuitDefinition())
   const app = document.getElementById('app') as HTMLElement
-  const view = new SceneView(app, sim.getCircuitDefinition(), assets)
+  // Decoración del circuito fijo (portal de meta, pedestal del cañón, globos…) SOLO con el circuito
+  // fijo: el sandbox y el circuito diario tienen otro layout, así que esos props ahí estorban.
+  const view = new SceneView(app, sim.getCircuitDefinition(), assets, { decor: !circuitDef && !daily })
   view.resize()
 
   const camera = new FollowCamera(view.aspect)
@@ -131,6 +161,7 @@ async function main(): Promise<void> {
       sim.getObstacleTransforms(),
       loop.alpha,
     )
+    if (hasCannons) view.updateCannons(sim.getCannonViews(), sim.getProjectiles())
     view.updatePlayerAnimation(ps.isGrounded, dtRender)
     view.setDebug(debug ? sim.getDebugRender() : null)
     hud.update(run, input.activeScheme)

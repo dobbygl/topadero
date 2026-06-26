@@ -21,6 +21,10 @@ import {
 } from './assets'
 import type { Transform, Vec3 } from '../types'
 
+// Orientación del cañón (prototipo): la boca por defecto mira a -Z; se rota desde aquí hacia el aim.
+const CANNON_FORWARD = new THREE.Vector3(0, 0, -1)
+const CANNON_AIM_TMP = new THREE.Vector3()
+
 function lerpInto(out: THREE.Vector3, a: Vec3, b: Vec3, t: number): void {
   out.set(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t, a.z + (b.z - a.z) * t)
 }
@@ -119,6 +123,9 @@ export class SceneView {
   readonly scene = new THREE.Scene()
   private readonly playerMesh: THREE.Object3D
   private readonly obstacleMeshes: THREE.Object3D[]
+  // Cañones (prototipo): pivote del cañón a orientar + pool de esferas de proyectil. SOLO render.
+  private readonly cannonBarrels: THREE.Object3D[]
+  private readonly projectilePool: THREE.Mesh[]
   // Overlay de depuración de física (colliders de Rapier como líneas); SOLO render.
   private readonly debugLines: THREE.LineSegments
   // Animación del personaje (v1.2.0, SOLO render): mezclador + clips por nombre.
@@ -130,7 +137,7 @@ export class SceneView {
   private readonly _qa = new THREE.Quaternion()
   private readonly _qb = new THREE.Quaternion()
 
-  constructor(container: HTMLElement, circuit: CircuitDefinition, catalog: AssetCatalog) {
+  constructor(container: HTMLElement, circuit: CircuitDefinition, catalog: AssetCatalog, options: { decor?: boolean } = {}) {
     this.renderer = new THREE.WebGLRenderer({ antialias: true })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.renderer.toneMapping = THREE.NeutralToneMapping // preserva saturación candy (NO ACES)
@@ -332,8 +339,84 @@ export class SceneView {
       return group
     })
 
-    this.buildDecor(catalog)
-    this.buildEnvironmentProps()
+    // --- Cañones (prototipo): pedestal + cañón orientable; proyectiles desde un pool de esferas.
+    // Solo render; las poses vienen de la sim (getCannonViews/getProjectiles) vía updateCannons. ---
+    const cc = config.cannon
+    this.cannonBarrels = (circuit.cannons ?? []).map((cn) => {
+      const grp = new THREE.Group()
+      grp.position.set(cn.base.x, cn.base.y, cn.base.z)
+      const barrelPivot = new THREE.Group() // se orienta hacia el aim en updateCannons
+
+      const baseMesh = getMesh(catalog, cn.baseMeshUrl)
+      const barrelMesh = getMesh(catalog, cn.barrelMeshUrl)
+      if (baseMesh && barrelMesh) {
+        // Torreta con malla low-poly (sandbox): pedestal ESTÁTICO + tubo que apunta. Las mallas se
+        // centran y escalan (fitInto 'contain', uniforme); los offsets de orientación/posición
+        // viven en config.cannon (afinables a ojo en #/sandbox/cannon). El tubo cuelga del
+        // barrelPivot, que apunta al jugador; el pedestal no gira.
+        const cube = (s: number): Vec3 => ({ x: s, y: s, z: s })
+        fitInto(baseMesh, cube(cc.meshBaseSize), 'contain')
+        const baseHolder = new THREE.Group()
+        baseHolder.add(baseMesh)
+        baseHolder.position.y = cc.meshBaseDropY
+        grp.add(baseHolder)
+
+        fitInto(barrelMesh, cube(cc.meshBarrelSize), 'contain')
+        const barrelHolder = new THREE.Group()
+        barrelHolder.add(barrelMesh)
+        barrelHolder.rotation.y = cc.meshBarrelYaw // eje largo del tubo (+X) → -Z (boca delante)
+        barrelHolder.position.z = cc.meshBarrelOffsetZ // el tubo sale del pivote hacia delante
+        barrelPivot.add(barrelHolder)
+
+        applyGlossy(baseMesh, config.glossy.obstacle)
+        applyGlossy(barrelMesh, config.glossy.obstacle)
+      } else {
+        // Reserva: primitivas (pedestal cilíndrico + tubo cilíndrico) con el color de config.
+        const mat = new THREE.MeshStandardMaterial({ color: cc.color, roughness: 0.4, metalness: 0.1 })
+        const base = new THREE.Mesh(
+          new THREE.CylinderGeometry(cc.baseRadius, cc.baseRadius * 1.15, cc.baseHeight, 18),
+          mat,
+        )
+        base.position.y = -cc.baseHeight / 2
+        base.castShadow = true
+        grp.add(base)
+        const barrel = new THREE.Mesh(
+          new THREE.CylinderGeometry(cc.barrelRadius, cc.barrelRadius, cc.barrelLength, 16),
+          mat,
+        )
+        barrel.rotation.x = Math.PI / 2 // eje del cilindro Y → Z (apunta a -Z local)
+        barrel.position.z = -cc.barrelLength / 2 // se extiende hacia delante
+        barrel.castShadow = true
+        barrelPivot.add(barrel)
+      }
+
+      grp.add(barrelPivot)
+      this.scene.add(grp)
+      return barrelPivot
+    })
+    this.projectilePool = Array.from({ length: 48 }, () => {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(cc.projectileRadius, 14, 14),
+        new THREE.MeshStandardMaterial({
+          color: cc.projectileColor,
+          emissive: cc.projectileColor,
+          emissiveIntensity: 0.45,
+          roughness: 0.3,
+        }),
+      )
+      m.visible = false
+      m.castShadow = true
+      this.scene.add(m)
+      return m
+    })
+
+    // Decoración del CIRCUITO FIJO (portal de meta, barandilla, pedestal del cañón, poste, globos,
+    // molinillos): posiciones cableadas a su layout (P7/P6/P2). Solo se añade cuando `decor` (por
+    // defecto true); el sandbox y el circuito diario la desactivan para no ensuciar con props ajenos.
+    if (options.decor ?? true) {
+      this.buildDecor(catalog)
+      this.buildEnvironmentProps()
+    }
 
     // Overlay de depuración (oculto por defecto): líneas de los colliders de Rapier.
     // depthTest:false + renderOrder alto → se dibuja ENCIMA de las mallas (si no, coincide con
@@ -470,6 +553,26 @@ export class SceneView {
       this._qa.set(a.x, a.y, a.z, a.w)
       this._qb.set(b.x, b.y, b.z, b.w)
       mesh.quaternion.slerpQuaternions(this._qa, this._qb, alpha)
+    }
+  }
+
+  /** Orienta cada cañón a su dirección de apuntado y coloca los proyectiles vivos (pool). SOLO render. */
+  updateCannons(views: { base: Vec3; aim: Vec3 }[], projectiles: Vec3[]): void {
+    for (let i = 0; i < this.cannonBarrels.length; i++) {
+      const v = views[i]
+      if (!v) continue
+      CANNON_AIM_TMP.set(v.aim.x, v.aim.y, v.aim.z)
+      this.cannonBarrels[i].quaternion.setFromUnitVectors(CANNON_FORWARD, CANNON_AIM_TMP)
+    }
+    for (let i = 0; i < this.projectilePool.length; i++) {
+      const p = projectiles[i] as Vec3 | undefined
+      const m = this.projectilePool[i]
+      if (p) {
+        m.position.set(p.x, p.y, p.z)
+        m.visible = true
+      } else {
+        m.visible = false
+      }
     }
   }
 

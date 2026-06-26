@@ -113,6 +113,37 @@ export const config = {
     bestMarkKeyPrefix: 'topadero.best.', // localStorage: mejor marca por día/circuito
   },
 
+  // --- Cañón que apunta y dispara (prototipo; subsistema reactivo en sim/cannon.ts). Determinista:
+  // todo se consume en el paso fijo. Por ahora solo se usa en la escena debug (circuito real sin
+  // cañones → inerte). El impacto del proyectil reutiliza el knockback (cap knockbackMax). ---
+  cannon: {
+    rotationSpeed: 1.8, // rad/s a la que gira el apuntado hacia el objetivo
+    aimCadence: 0.4, // s entre re-muestreos del objetivo (lag de apuntado → esquivable)
+    fireToleranceRad: 0.12, // rad: dispara si el apuntado está dentro de este ángulo del jugador
+    fireReload: 1.2, // s entre disparos
+    projectileSpeed: 18, // m/s
+    projectileRadius: 0.25, // m (colisión esfera + render)
+    projectileLife: 4, // s antes de despawn
+    muzzleLength: 1.0, // m del pivote a la boca del cañón (origen del proyectil)
+    contactMargin: 0.05, // m extra anti-tunneling en el contacto barrido
+    knockbackStrength: 12, // m/s de empuje al impactar (capado por knockbackMax)
+    // Render (primitivas, reserva si no hay malla): pedestal + cañón + esfera de proyectil.
+    baseRadius: 0.5,
+    baseHeight: 0.6,
+    barrelRadius: 0.22,
+    barrelLength: 1.4,
+    color: 0x4c566a,
+    projectileColor: 0xff5fa2,
+    // Render (malla low-poly del sandbox): torreta articulada = pedestal ESTÁTICO + tubo que
+    // apunta (barrelPivot). Offsets de escala/orientación afinables a ojo en #/sandbox/cannon
+    // (Principio V); no afectan a la simulación. Reserva a las primitivas de arriba si no carga.
+    meshBaseSize: 1.6, // lado del cubo objetivo del pedestal (escala uniforme 'contain')
+    meshBaseDropY: -0.8, // baja el pedestal bajo el pivote para que apoye en la plataforma
+    meshBarrelSize: 1.9, // lado del cubo objetivo del tubo (conserva su proporción alargada)
+    meshBarrelYaw: Math.PI / 2, // gira el eje largo del tubo (+X) a -Z (boca hacia delante)
+    meshBarrelOffsetZ: -0.55, // desplaza el tubo hacia delante (-Z) para que salga del pivote
+  },
+
   // --- Obstáculo móvil ---
   obstacleAmplitude: 4.5, // m de vaivén (eje X)
   obstacleSpeed: 1.6, // rad/s de la fase senoidal
