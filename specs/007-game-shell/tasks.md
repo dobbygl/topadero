@@ -208,9 +208,9 @@ visible; transiciones sin parpadeo; ayuda de controles en el título.
   `src/settings` ni la persistencia (grep de imports); el shell solo lee estado y emite intención.
 - [X] T025 [P] Verificar la puerta automática (Principio II): `npx vitest run tests/determinism.test.ts`
   en verde **sin cambios** y `npx vitest run tests/core/pause.test.ts` en verde.
-- [ ] T026 Ejecutar la validación manual de `quickstart.md` (Principio VI): flujo completo en
+- [X] T026 Ejecutar la validación manual de `quickstart.md` (Principio VI): flujo completo en
   escritorio y móvil, pausa, ajustes, cambio de día UTC, offline y sin `localStorage`; sin consola ni
-  flags de dev, sin pantalla en blanco.
+  flags de dev, sin pantalla en blanco. (Validado por el usuario, 2026-06-26.)
 - [X] T027 [P] Limpieza: retirar restos del overlay `#click-to-play` y de cualquier dependencia de
   tecla como ÚNICA salida; confirmar que `R` sigue como atajo pero no como única vía (FR-023,
   Principio VI).
