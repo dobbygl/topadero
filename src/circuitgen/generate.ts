@@ -38,8 +38,8 @@ const OBSTACLE_META: Record<Exclude<ObstacleKind, 'carry'>, { color: number; mes
 // Tema candy reutilizado del circuito fijo (dirección de arte 002); el render cae a color si no carga.
 const THEME = {
   palette: { sky: 0x7ec8f3, platform: 0x2fd4c4, ramp: 0xff7a1a, wall: 0x14233b, ink: 0x14233b },
-  skyboxUrl: 'assets/sky.png',
-  textures: { platform: 'assets/tex-platform.png', ramp: 'assets/tex-ramp.png', wall: 'assets/tex-wall.png' },
+  skyboxUrl: 'assets/sky.webp',
+  textures: { platform: 'assets/tex-platform.webp', ramp: 'assets/tex-ramp.webp', wall: 'assets/tex-wall.webp' },
 }
 
 /** Genera el circuito diario determinista a partir del seed blanqueado. */
@@ -146,7 +146,7 @@ export function generateCircuit(seed: Uint8Array, params: GeneratorParams): Circ
       center: { x: curX, y: finishTop + 1.1, z: curZ },
       halfExtents: { x: curHW, y: 0.8, z: hd },
       color: FINISH_COLOR,
-      signageUrl: 'assets/sign-finish.png',
+      signageUrl: 'assets/sign-finish.webp',
     },
   ]
 

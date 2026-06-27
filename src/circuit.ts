@@ -159,13 +159,13 @@ export const circuit: CircuitDefinition = {
   ],
   zones: [
     { kind: 'start', center: { x: 0, y: 0.6, z: 0 }, halfExtents: { x: 4, y: 0.6, z: 4 }, color: START },
-    { kind: 'finish', center: { x: 0, y: 2.6, z: -66 }, halfExtents: { x: 4, y: 0.8, z: 4 }, color: FINISH, signageUrl: 'assets/sign-finish.png' },
+    { kind: 'finish', center: { x: 0, y: 2.6, z: -66 }, halfExtents: { x: 4, y: 0.8, z: 4 }, color: FINISH, signageUrl: 'assets/sign-finish.webp' },
   ],
   // VISUAL-ONLY (US2): dirección de arte de ./marketing (cartoon/pop). Rutas bajo public/assets/.
   // Reserva: si una textura no carga, scene.ts usa el color de paleta por tipo.
   theme: {
     palette: { sky: 0x7ec8f3, platform: 0x2fd4c4, ramp: 0xff7a1a, wall: 0x14233b, ink: 0x14233b },
-    skyboxUrl: 'assets/sky.png',
-    textures: { platform: 'assets/tex-platform.png', ramp: 'assets/tex-ramp.png', wall: 'assets/tex-wall.png' },
+    skyboxUrl: 'assets/sky.webp',
+    textures: { platform: 'assets/tex-platform.webp', ramp: 'assets/tex-ramp.webp', wall: 'assets/tex-wall.webp' },
   },
 }

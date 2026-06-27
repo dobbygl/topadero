@@ -75,8 +75,13 @@ Comandos disponibles:
 | `npm test` | Pruebas con Vitest: determinismo, pausa, generador del circuito, audio y entrada |
 | `npm run test:watch` | Vitest en modo interactivo |
 | `npm run typecheck` | Validación estricta de TypeScript |
-| `npm run build` | Typecheck y build de producción en `dist/` |
+| `npm run build` | Typecheck, build de producción en `dist/` y **comprobación de presupuestos de assets** (falla si se exceden) |
 | `npm run preview` | Servir localmente el build |
+| `npm run assets:optimize` | Pipeline **offline**: optimiza los originales de `assets-src/` (texturas→WebP 1024², geometría) hacia `public/assets/`; solo cuando cambian los assets |
+
+> Los assets servidos viven en `public/assets/` (optimizados); los originales pesados, en `assets-src/`
+> (no se publican). Los límites de peso y triángulos están en `asset-budgets.json` y los hace cumplir
+> `npm run build`, que **falla** si un asset o el total los superan.
 
 La guía completa de ejecución y validación está en [`quickstart.md`](specs/001-obstacle-platformer/quickstart.md).
 

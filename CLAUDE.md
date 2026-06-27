@@ -3,19 +3,22 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 <!-- SPECKIT START -->
-Active feature: 007-game-shell (Topadero: shell de juego jugable de extremo a extremo —título, pausa, resultados/victoria y ajustes— que envuelve el circuito diario; pausa determinista fuera del paso fijo; preferencias persistidas en local — constitución v2.2.0, Principio VI).
+Active feature: 008-pulido-optimizacion (Topadero: corte mínimo publicable —robustez de arranque sin pantalla en blanco, presupuestos verificables de peso/triángulos de assets que FALLAN el build, pasada de rendimiento y QA, y distribución web estática— constitución v2.2.0, Principio VI).
 Stack: TypeScript + Vite + Three.js + @dimforge/rapier3d-compat (físicas WASM).
 Arquitectura: núcleo de simulación headless (src/sim/) con paso de tiempo fijo
 (acumulador) desacoplado del render; Three.js, HUD, shell y cámara son vistas puras;
-todo el ajuste centralizado en src/config.ts. El arte decorativo (mallas low-poly +
-texturas, excepción v1.1.0) vive solo en src/render, alineado a colliders primitivos,
-nunca como geometría de colisión. Puerta automática no negociable: test de
-determinismo / independencia de FPS (Principio II de la constitución); la pausa se
-implementa fuera de advance()/src/sim para no tocarla.
+todo el ajuste de RUNTIME centralizado en src/config.ts. El arte decorativo (mallas
+low-poly + texturas, excepción v1.1.0) vive solo en src/render, alineado a colliders
+primitivos, nunca como geometría de colisión. Presupuestos de assets (build-time) en
+manifest único asset-budgets.json, separado de config.ts. Pipeline de optimización
+OFFLINE (assets-src/ → public/assets/ vía npm run assets:optimize); el comprobador de
+presupuestos corre en npm run build y falla al exceder. Puerta automática no negociable:
+test de determinismo / independencia de FPS (Principio II); la optimización es de render
+y no toca src/sim ni la física. El rendimiento (FPS) es puerta MANUAL en dispositivos.
 
 For technologies, project structure, shell commands and other context, read the
-current plan: specs/007-game-shell/plan.md
-(spec: specs/007-game-shell/spec.md ·
+current plan: specs/008-pulido-optimizacion/plan.md
+(spec: specs/008-pulido-optimizacion/spec.md ·
 constitución: .specify/memory/constitution.md)
 <!-- SPECKIT END -->
 

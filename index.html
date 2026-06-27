@@ -9,6 +9,19 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <title>Topadero</title>
+    <meta name="description" content="Topadero: juego de plataformas de obstáculos en el navegador, al estilo Fall Guys, para una persona. Cada día, un circuito nuevo. Sin instalar nada." />
+    <!-- Metadatos para compartir (008 · US3, FR-018). URLs absolutas a Pages para que los crawlers
+         resuelvan la imagen de preview (la base relativa './' no les sirve). -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Topadero" />
+    <meta property="og:title" content="Topadero — un circuito nuevo cada día" />
+    <meta property="og:description" content="Juego de plataformas de obstáculos en el navegador, al estilo Fall Guys, para una persona. Sin instalar nada." />
+    <meta property="og:url" content="https://dobbygl.github.io/topadero/play/" />
+    <meta property="og:image" content="https://dobbygl.github.io/topadero/play/icon-512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Topadero — un circuito nuevo cada día" />
+    <meta name="twitter:description" content="Juego de plataformas de obstáculos en el navegador, al estilo Fall Guys. Sin instalar nada." />
+    <meta name="twitter:image" content="https://dobbygl.github.io/topadero/play/icon-512.png" />
     <style>
       /* Identidad visual de ./marketing (paleta cartoon/pop). Las fuentes de marca
          (Fraunces / Hanken Grotesk / Spline Sans Mono) NO están empaquetadas: se usan
@@ -98,6 +111,18 @@
         font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--ink); }
       #boot b { font-size: clamp(40px, 12vw, 84px); font-weight: 900; letter-spacing: 3px; color: var(--gold); }
       #boot span { font-size: 16px; font-weight: 700; opacity: .85; }
+      /* Pantalla de error de arranque (008 · US1): repinta #boot con mensaje claro + acción, en vez
+         de pantalla en blanco (Principio VI). La activa src/ui/bootError.ts al fallar el arranque. */
+      #boot.error { padding: 24px; text-align: center; }
+      #boot.error b { font-size: clamp(22px, 6vw, 34px); letter-spacing: 1px; color: var(--ink); max-width: 22em; }
+      #boot .boot-error-detail { max-width: 30em; font-size: 15px; font-weight: 600; opacity: .9; line-height: 1.5; }
+      #boot .boot-btn {
+        margin-top: 8px; min-width: 180px; min-height: 48px; padding: 12px 22px; font: inherit;
+        font-weight: 800; color: var(--paper); background: var(--pink); border: 3px solid var(--ink);
+        border-radius: 999px; box-shadow: 0 4px 0 var(--ink); cursor: pointer;
+      }
+      #boot .boot-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--ink); }
+      #boot .boot-btn:focus-visible { outline: 4px solid var(--teal); outline-offset: 3px; }
     </style>
   </head>
   <body>
