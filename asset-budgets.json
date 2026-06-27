@@ -1,0 +1,33 @@
+{
+  "_comment": "Presupuestos de assets (build-time) — 008. Valores de clarify 2026-06-27. Manifest ÚNICO, separado de config.ts (que es para feel de runtime). Lo verifica scripts/check-asset-budgets.mjs en `npm run build` (FALLA al exceder). Bytes en binario (1 MiB = 1048576).",
+  "totalMaxBytes": 20971520,
+  "categories": [
+    {
+      "id": "texture-standalone",
+      "match": ["assets/sky.*", "assets/sign-*.*", "assets/tex-*.*"],
+      "maxBytesPerFile": 524288,
+      "maxResolution": 1024
+    },
+    {
+      "id": "mesh-character",
+      "match": ["assets/mascot.glb", "assets/player-rigged.glb"],
+      "maxBytesPerFile": 1048576,
+      "maxTrianglesPerMesh": 15000,
+      "maxEmbeddedImageBytes": 524288
+    },
+    {
+      "id": "mesh-obstacle-prop",
+      "match": ["assets/obstacle-*.glb", "assets/prop-*.glb"],
+      "maxBytesPerFile": 1048576,
+      "maxTrianglesPerMesh": 12000,
+      "maxEmbeddedImageBytes": 524288
+    },
+    {
+      "id": "audio",
+      "match": ["audio/*"],
+      "maxBytesPerFile": 786432
+    }
+  ],
+  "sceneMaxTriangles": 120000,
+  "sceneTrianglesEnforcement": "manual"
+}

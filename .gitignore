@@ -15,6 +15,9 @@ site/
 .env
 .env.*
 
+# Auditoría interna de exposición (lista secretos/estrategia; el repo es público: NO versionar)
+auditoria-exposicion-publica.md
+
 # Logs y temporales
 *.log
 

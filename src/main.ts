@@ -12,6 +12,8 @@ import { quatFromYaw } from './types'
 import { FollowCamera } from './render/followCamera'
 import { SceneView } from './render/scene'
 import { loadAssets } from './render/assets'
+import { isWebGLAvailable } from './render/webgl'
+import { showBootError } from './ui/bootError'
 import { Input } from './input/input'
 import { Hud } from './ui/hud'
 import { Simulation } from './sim/simulation'
@@ -26,7 +28,23 @@ import { settings } from './settings/settings'
 
 async function main(): Promise<void> {
   registerServiceWorker() // PWA (004 · US4): offline tras la primera carga; no toca el paso fijo.
-  await RAPIER.init()
+
+  // Robustez de arranque (008 · US1, FR-002): comprobar WebGL ANTES de crear el renderer, para mostrar
+  // una pantalla de error clara en vez de dejar que `new SceneView` lance y deje pantalla en blanco.
+  if (!isWebGLAvailable()) {
+    showBootError('no-webgl')
+    return
+  }
+
+  // FR-003: el WASM de Rapier puede fallar al iniciar (red/navegador). Mensaje claro + reintentar, no
+  // excepción silenciosa. (El resto de fallos no previstos los captura el catch externo de main.)
+  try {
+    await RAPIER.init()
+  } catch (e: unknown) {
+    console.error('Rapier (WASM) no pudo inicializarse:', e)
+    showBootError('wasm-init-failed')
+    return
+  }
 
   // Sandbox (DEV-ONLY): la ruta #/sandbox/<name> carga una escena de prueba y TIENE PRELACIÓN sobre el
   // circuito diario (para probar/afinar elementos aislados). En producción import.meta.env.DEV es false
@@ -273,12 +291,10 @@ async function main(): Promise<void> {
   requestAnimationFrame(frame)
 }
 
+// Cualquier fallo CATASTRÓFICO no previsto del arranque → pantalla de error clara (FR-005), nunca
+// pantalla en blanco ni stack crudo. El detalle técnico va a la consola para depurar (no es la salida
+// del jugador). Los fallos por-asset y la baliza diaria ya degradan dentro de main() sin llegar aquí.
 main().catch((e: unknown) => {
-  const el = document.getElementById('hud')
-  const err = e instanceof Error ? (e.stack ?? e.message) : String(e)
-  if (el) el.innerHTML =
-    '<pre style="color:#fff;background:#900;padding:12px;white-space:pre-wrap;font:12px monospace;position:fixed;inset:0;margin:0;overflow:auto;z-index:99">' +
-    err +
-    '</pre>'
-  console.error(e)
+  console.error('Arranque fallido:', e)
+  showBootError('unknown')
 })

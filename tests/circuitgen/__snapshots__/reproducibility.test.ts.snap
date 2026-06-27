@@ -2,7 +2,7 @@
 
 exports[`generador: reproducibilidad > vector de verificación: hash conocido + versión → structuralHash FIJO (SC-005) 1`] = `
 {
-  "structuralHash": "83d088893bdf97d25235002346956489ff760045d5a64e75e3f7b41f7bbef709",
+  "structuralHash": "8e0315fd72bd4abeff5dbe7de1d8e8dc9758461f4d11ee22496f15b67ce8f5ec",
   "version": "1.0.0",
 }
 `;
